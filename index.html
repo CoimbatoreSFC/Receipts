@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CBESFC Receipt Generator</title>
- <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
@@ -396,7 +396,7 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn-primary" onclick="previewReceipt()">Preview Receipt</button>
+        <button class="btn-primary" onclick="previewReceipt()">Save & Preview</button>
         <button class="btn-outline" onclick="newReceipt()">Clear Form</button>
       </div>
     </div>
@@ -702,13 +702,15 @@ function previewReceipt(){
   isSaved = false;
   ticketGiven = false;
   currentReceiptNo = els('receiptNo').value;
-  updateActionButtons();
 
   els('formView').style.display = 'none';
   els('searchView').style.display = 'none';
   els('receiptView').style.display = 'block';
   els('saveStatus').textContent = '';
   window.scrollTo(0,0);
+
+  // AUTOMATICALLY SAVE TO GOOGLE SHEET
+  saveToSheet();
 }
 
 function editReceipt(){
