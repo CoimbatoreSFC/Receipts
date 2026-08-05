@@ -958,14 +958,37 @@ function downloadImage(){
     alert('Image library did not load. Check your internet connection and try again.');
     return;
   }
-  html2canvas(els('voucherNode'), { scale: 2, backgroundColor: '#fffdf7', useCORS: true })
+
+  const voucher = els('voucherNode');
+
+  // Temporarily force fixed desktop dimensions so mobile renders the exact same size
+  const originalWidth = voucher.style.width;
+  const originalMaxWidth = voucher.style.maxWidth;
+
+  voucher.style.width = '680px';
+  voucher.style.maxWidth = 'none';
+
+  html2canvas(voucher, { 
+    scale: 3, // High resolution crisp image
+    backgroundColor: '#fffdf7', 
+    useCORS: true,
+    windowWidth: 1200 // Simulates a desktop viewport width for media queries
+  })
     .then(canvas => {
+      // Revert inline styles back to original responsive mobile values
+      voucher.style.width = originalWidth;
+      voucher.style.maxWidth = originalMaxWidth;
+
       const link = document.createElement('a');
       link.download = (currentReceiptNo || 'receipt') + '.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     })
     .catch(err => {
+      // Revert styles on error as well
+      voucher.style.width = originalWidth;
+      voucher.style.maxWidth = originalMaxWidth;
+
       alert('Could not generate the receipt image.');
       console.error(err);
     });
