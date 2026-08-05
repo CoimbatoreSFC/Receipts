@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBESFC Receipt Generator</title>
+ <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#0f2a4a;
+    --green:#12744f;
+    --green-light:#e5f3ec;
+    --gold:#c8992a;
+    --gold-light:#f4e3b2;
+    --paper:#fffdf7;
+    --ink:#1c1c1c;
+    --muted:#6b6b6b;
+    --line:#bcbcbc;
+    --danger:#b23a3a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background:#e9ecf3;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  header.topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:18px 16px;
+    text-align:center;
+    box-shadow:0 3px 10px rgba(0,0,0,.25);
+  }
+  header.topbar .logo-circle{
+    width:110px;height:110px;border-radius:50%;
+    background:#fff;border:3px solid var(--gold);
+    margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  }
+  header.topbar .logo-circle img{width:100%;height:100%;object-fit:cover;}
+  header.topbar h1{
+    margin:4px 0 2px;font-size:1.25rem;letter-spacing:.5px;color:var(--gold-light);
+  }
+  header.topbar .contact-line{font-size:.82rem;color:#dfe6f0;}
+
+  .wrap{
+    max-width:720px;margin:20px auto;padding:0 14px;
+  }
+  .nav-row{display:flex;gap:10px;margin-bottom:16px;}
+  .card{
+    background:#fff;border-radius:var(--radius);
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    padding:20px;margin-bottom:18px;
+  }
+  .card h2{
+    margin:0 0 14px;font-size:1rem;color:var(--navy);
+    border-bottom:2px solid var(--gold);padding-bottom:8px;
+  }
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;font-size:.8rem;font-weight:600;color:var(--muted);
+    margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;
+  }
+  .field input,.field select,.field textarea{
+    width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;
+    font-size:.95rem;background:#fbfbfb;color:var(--ink);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{
+    outline:none;border-color:var(--navy);background:#fff;
+  }
+  .field input[readonly]{background:#f0f0f0;color:#444;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:480px){.row2{grid-template-columns:1fr;}}
+
+  .calc-box{
+    background:var(--gold-light);border:1px dashed var(--gold);
+    border-radius:8px;padding:10px 14px;font-weight:700;color:var(--navy);
+    display:flex;justify-content:space-between;margin-bottom:10px;font-size:.95rem;
+  }
+  .calc-box.warn{background:#fde8e8;border-color:var(--danger);color:var(--danger);}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  button{
+    flex:1;min-width:140px;padding:12px 14px;border:none;border-radius:8px;
+    font-size:.95rem;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  button:disabled{opacity:.6;cursor:default;}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-primary:hover{background:#173a63;}
+  .btn-gold{background:var(--gold);color:#2a1e00;}
+  .btn-gold:hover{background:#b9871f;}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-green:hover{background:#0d5d3e;}
+  .btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .btn-outline:hover{background:#f0f4fa;}
+  #saveStatus{font-size:.85rem;margin-top:10px;text-align:center;min-height:18px;}
+  #saveStatus.ok{color:#1a7d3a;}
+  #saveStatus.err{color:var(--danger);}
+
+  .given-badge{
+    flex:1;min-width:140px;text-align:center;padding:12px 14px;border-radius:8px;
+    background:var(--green-light);color:var(--green);font-weight:700;border:1.5px solid var(--green);
+  }
+
+  /* ---------------- PASSWORD GATE ---------------- */
+  #gateView{
+    max-width:340px;margin:60px auto;padding:0 14px;text-align:center;
+  }
+  #gateView .card{padding:28px 24px;}
+  #gateView .logo-circle{
+    width:110px;height:110px;border-radius:50%;overflow:hidden;margin:0 auto 14px;
+    border:3px solid var(--gold);background:#fff;
+  }
+  #gateView .logo-circle img{width:100%;height:100%;object-fit:cover;}
+  #gateView h2{border:none;padding:0;margin-bottom:16px;}
+  #gateView input{text-align:center;letter-spacing:2px;}
+  #gateError{color:var(--danger);font-size:.82rem;min-height:18px;margin-top:8px;}
+
+  /* ---------------- SEARCH / VIEW SAVED RECEIPTS ---------------- */
+  #searchStatus{font-size:.85rem;color:var(--muted);margin-top:8px;}
+  .result-item{
+    padding:10px 6px;border-bottom:1px solid #eee;cursor:pointer;
+  }
+  .result-item:hover{background:#f7f8fb;}
+  .ri-top{display:flex;justify-content:space-between;align-items:center;font-size:.92rem;gap:8px;}
+  .ri-badge{font-size:.68rem;padding:3px 9px;border-radius:10px;background:#eee;color:#777;white-space:nowrap;}
+  .ri-badge.given{background:var(--green-light);color:var(--green);}
+  .ri-sub{font-size:.78rem;color:var(--muted);margin-top:2px;}
+
+  /* ---------------- RECEIPT / VOUCHER ---------------- */
+  #receiptView{display:none;}
+  .voucher{
+    position:relative;
+    background:var(--paper);
+    border:1.5px solid var(--green);
+    border-radius:8px;
+    width:100%;
+    max-width:680px;
+    margin:0 auto;
+    overflow:hidden;
+  }
+  .ticket-stamp{
+    display:none;
+    position:absolute;top:66px;right:16px;
+    border:3px solid #1a7d3a;color:#1a7d3a;font-weight:800;font-size:.8rem;
+    padding:4px 10px;border-radius:6px;transform:rotate(-10deg);
+    letter-spacing:1px;background:rgba(255,255,255,.75);z-index:5;pointer-events:none;
+  }
+
+  /* ---- HEADER BAND ---- */
+  .v-band{
+    background:var(--green);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:14px;
+    padding:14px 18px;
+    min-height:108px;
+  }
+  /* Logo — bigger, no white border ring */
+  .v-band .v-logo{
+    width:90px;height:90px;border-radius:50%;
+    overflow:hidden;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .v-band .v-logo img{width:100%;height:100%;object-fit:cover;display:block;}
+
+  /* Club name + receipt label centred in the remaining space */
+  .v-band .v-center{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:1px;
+  }
+  .v-band .v-center .v-clubname{
+    font-size:1rem;
+    font-weight:800;
+    letter-spacing:.6px;
+    line-height:1.2;
+    color:#fff;
+  }
+  .v-band .v-center .v-addr{
+    font-size:.68rem;
+    opacity:.88;
+    line-height:1.3;
+    margin-top:3px;
+  }
+  .v-band .v-center .v-receipt-label{
+    font-size:.75rem;
+    font-weight:700;
+    letter-spacing:3px;
+    background:rgba(255,255,255,.18);
+    border-radius:4px;
+    padding:2px 10px;
+    margin-top:5px;
+    text-transform:uppercase;
+  }
+  /* Spacer so logo is centred visually — mirrors the logo width on the right */
+  .v-band .v-spacer{
+    width:90px;flex-shrink:0;
+  }
+
+  /* ---- BODY ---- */
+  .v-body{padding:14px 22px 10px;}
+  .v-row{display:flex;gap:16px;font-size:.82rem;margin-bottom:9px;color:var(--ink);}
+  .v-row .v-item{flex:1;display:flex;align-items:baseline;gap:6px;white-space:nowrap;}
+  .v-row .v-item .lbl{color:var(--muted);font-weight:600;flex-shrink:0;}
+  .v-row .v-item .val{
+    flex:1;border-bottom:1px dotted var(--line);padding-bottom:2px;font-weight:700;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
+  }
+  .v-purpose{font-size:.82rem;margin:6px 0 12px;display:flex;gap:6px;align-items:baseline;}
+  .v-purpose .lbl{color:var(--muted);font-weight:600;flex-shrink:0;}
+  .v-purpose .val{flex:1;border-bottom:1px dotted var(--line);padding-bottom:2px;font-weight:700;}
+
+  .v-amount-strip{
+    display:flex;gap:14px;align-items:center;background:var(--green-light);
+    border:1px solid #cfe6da;border-radius:6px;padding:10px 14px;margin:10px 0 12px;
+  }
+  .v-amount-strip .amt-block{text-align:center;flex:1;}
+  .v-amount-strip .amt-block .lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .v-amount-strip .amt-block .val{font-size:1rem;font-weight:800;color:var(--green);}
+  .v-amount-strip .amt-block.pending .val{color:var(--danger);}
+
+  .v-remarks{font-size:.75rem;color:var(--muted);margin:0 0 14px;}
+  .v-remarks b{color:var(--ink);}
+
+  /* ---- FOOTER with ghost name ---- */
+  .v-footer{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    padding:0 22px 6px;font-size:.72rem;color:var(--muted);
+  }
+  .v-footer .sig{text-align:center;position:relative;}
+  .v-footer .sig .ghost-name{
+    position:absolute;
+    top:-18px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:.78rem;
+    font-weight:700;
+    color:var(--ink);
+    opacity:0.13;
+    white-space:nowrap;
+    letter-spacing:.5px;
+    pointer-events:none;
+    text-transform:uppercase;
+  }
+  .v-footer .sig .line{border-top:1px solid var(--ink);width:160px;margin:26px 0 4px;}
+  .v-digital-note{
+    text-align:center;font-size:.68rem;color:var(--muted);font-style:italic;
+    padding:0 22px 16px;
+  }
+
+  @media(max-width:560px){
+    .v-band{flex-wrap:wrap;padding:12px;gap:10px;}
+    .v-band .v-spacer{display:none;}
+    .v-band .v-center .v-clubname{font-size:.88rem;}
+    .v-row{flex-direction:column;gap:6px;}
+    .v-footer{flex-direction:column;gap:14px;align-items:center;text-align:center;}
+    .v-footer .sig .line{margin:20px auto 4px;}
+  }
+
+  @media print{
+    body *{visibility:hidden;}
+    #receiptView, #receiptView *{visibility:visible;}
+    #receiptView{display:block !important;position:absolute;left:0;top:0;width:100%;}
+    .voucher{max-width:100%;width:100%;}
+    .no-print{display:none !important;}
+    @page{size:210mm 120mm landscape; margin:6mm;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== PASSWORD GATE ===================== -->
+<div id="gateView">
+  <div class="card">
+    <div class="logo-circle"><img src="https://drive.google.com/thumbnail?id=1y4UkGZSwvVEmB3RFAcmBdbBzaJjzZpV6&sz=w400" alt="Logo"></div>
+    <h2>CBESFC Receipt Access</h2>
+    <div class="field">
+      <input type="password" id="gatePassword" placeholder="Enter password">
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="checkPassword()">Unlock</button>
+    <div id="gateError"></div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="appRoot" style="display:none;">
+
+<header class="topbar">
+  <div class="logo-circle"><img src="https://drive.google.com/thumbnail?id=1y4UkGZSwvVEmB3RFAcmBdbBzaJjzZpV6&sz=w400" alt="Club Logo"></div>
+  <h1>Coimbatore North Suriya Fans Club</h1>
+  <div class="contact-line">+91 97513 96080&nbsp;|&nbsp;+91 88703 34554&nbsp;|&nbsp;+91 93449 44235</div>
+</header>
+
+<div class="wrap">
+
+  <div class="nav-row">
+    <button class="btn-outline" onclick="startNewReceipt()">🧾 New Receipt</button>
+    <button class="btn-outline" onclick="goToSearch()">🔍 View Saved Receipts</button>
+  </div>
+
+  <!-- ===================== FORM VIEW ===================== -->
+  <div id="formView">
+    <div class="card">
+      <h2>Receipt Details</h2>
+
+      <div class="row2">
+        <div class="field">
+          <label>Receipt Number</label>
+          <input type="text" id="receiptNo" readonly style="background:#f0f0f0;">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="text" id="receiptDate">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Movie Name</label>
+        <input type="text" id="movieName" value="Vishwanath & Sons FDFS">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="custName" placeholder="Customer name">
+        </div>
+        <div class="field">
+          <label>Mobile Number</label>
+          <input type="tel" id="custMobile" placeholder="10-digit mobile">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Ticket Count</label>
+          <input type="number" id="ticketCount" min="0" value="0">
+        </div>
+        <div class="field">
+          <label>Per Ticket Price (₹)</label>
+          <input type="number" id="ticketPrice" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="calc-box">
+        <span>Total Value</span>
+        <span>₹<span id="totalValue">0</span></span>
+      </div>
+
+      <div class="field">
+        <label>Paid Value (₹)</label>
+        <input type="number" id="paidValue" min="0" value="0">
+      </div>
+
+      <div class="calc-box" id="pendingBox">
+        <span>Pending To Pay</span>
+        <span>₹<span id="pendingValue">0</span></span>
+      </div>
+
+      <div class="field">
+        <label>Payment Mode</label>
+        <select id="paymentMode">
+          <option value="UPI">UPI</option>
+          <option value="CASH">CASH</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Remarks</label>
+        <textarea id="remarks" rows="2" placeholder="Optional remarks"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Contact Person</label>
+        <select id="contactPerson">
+          <option value="SUNIL">SUNIL</option>
+          <option value="SURYA">SURYA</option>
+          <option value="PADMASEKAR">PADMASEKAR</option>
+          <option value="ASHWIN">ASHWIN</option>
+          <option value="JK">JK</option>
+          <option value="MUTHU">MUTHU</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contact Person Mobile</label>
+        <input type="text" id="contactMobile" readonly>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="previewReceipt()">Preview Receipt</button>
+        <button class="btn-outline" onclick="newReceipt()">Clear Form</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SEARCH / VIEW SAVED RECEIPTS ===================== -->
+  <div id="searchView" style="display:none;">
+    <div class="card">
+      <h2>Saved Receipts</h2>
+      <div class="field">
+        <input type="text" id="searchQuery" placeholder="Search by name, mobile number or receipt no.">
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="doSearch()">Search</button>
+        <button class="btn-outline" onclick="showAllReceipts()">Show All</button>
+      </div>
+      <div id="searchStatus"></div>
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <!-- ===================== RECEIPT / VOUCHER VIEW ===================== -->
+  <div id="receiptView">
+    <div class="voucher" id="voucherNode">
+      <div class="ticket-stamp" id="ticketStamp">TICKET GIVEN</div>
+
+      <!-- Header band: logo | centred club info | spacer -->
+      <div class="v-band">
+        <div class="v-logo">
+          <img src="https://drive.google.com/thumbnail?id=1y4UkGZSwvVEmB3RFAcmBdbBzaJjzZpV6&sz=w400" alt="Logo" crossorigin="anonymous">
+        </div>
+        <div class="v-center">
+          <div class="v-clubname">COIMBATORE NORTH SURIYA FANS CLUB</div>
+          <div class="v-addr">Ganapathy, Coimbatore - 641006<br>+91 97513 96080 &nbsp;|&nbsp; +91 88703 34554 &nbsp;|&nbsp; +91 93449 44235</div>
+          <div class="v-receipt-label">Receipt</div>
+        </div>
+        <div class="v-spacer"></div>
+      </div>
+
+      <div class="v-body">
+        <div class="v-row">
+          <div class="v-item"><span class="lbl">Receipt No:</span><span class="val" id="r_no"></span></div>
+          <div class="v-item"><span class="lbl">Date:</span><span class="val" id="r_date"></span></div>
+        </div>
+        <div class="v-row">
+          <div class="v-item"><span class="lbl">Received with thanks from:</span><span class="val" id="r_name"></span></div>
+          <div class="v-item"><span class="lbl">Mobile No:</span><span class="val" id="r_mobile"></span></div>
+        </div>
+        <div class="v-purpose">
+          <span class="lbl">For the purpose of:</span>
+          <span class="val" id="r_movie"></span>
+        </div>
+        <div class="v-row">
+          <div class="v-item"><span class="lbl">Ticket Count:</span><span class="val" id="r_count"></span></div>
+          <div class="v-item"><span class="lbl">Per Ticket Price:</span><span class="val" id="r_price"></span></div>
+          <div class="v-item"><span class="lbl">By:</span><span class="val" id="r_mode"></span></div>
+        </div>
+
+        <!-- Amount strip: Total always shown; Pending block shown only when > 0 -->
+        <div class="v-amount-strip" id="amountStrip">
+          <div class="amt-block"><div class="lbl">Total Value</div><div class="val" id="r_total"></div></div>
+          <div class="amt-block"><div class="lbl">Paid Value</div><div class="val" id="r_paid"></div></div>
+          <div class="amt-block pending" id="pendingBlock"><div class="lbl">Pending</div><div class="val" id="r_pending"></div></div>
+        </div>
+
+        <div class="v-remarks"><b>Remarks:</b> <span id="r_remarks"></span></div>
+      </div>
+
+      <div class="v-footer">
+        <div>Contact Person:<br><strong id="r_contact"></strong><br><span id="r_contactmobile"></span></div>
+        <div class="sig">
+          <div class="ghost-name" id="r_ghost_name"></div>
+          <div class="line"></div>
+          Received By
+        </div>
+      </div>
+      <div class="v-digital-note">This is a digitally generated receipt.</div>
+    </div>
+
+    <div class="btn-row no-print" style="max-width:680px;margin:16px auto 0;">
+      <button class="btn-outline" id="btnEdit" onclick="editReceipt()">✎ Edit</button>
+      <button class="btn-outline" id="btnBackSearch" onclick="backToSearchResults()">← Back to Search</button>
+      <button class="btn-gold" onclick="window.print()">🖶 Print</button>
+      <button class="btn-outline" onclick="downloadImage()">⬇ Download Image</button>
+      <button class="btn-primary" id="btnSave" onclick="saveToSheet()">☁ Save to Sheet</button>
+      <button class="btn-green" id="btnMarkGiven" onclick="markTicketGiven()">✔ Mark Ticket Given</button>
+      <div class="given-badge" id="givenBadge">✔ Ticket Given</div>
+    </div>
+    <div id="saveStatus" class="no-print"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ===================== LOGO PRELOAD (base64) =====================
+(function preloadLogo(){
+  const FILE_ID = '1y4UkGZSwvVEmB3RFAcmBdbBzaJjzZpV6';
+  const URLS = [
+    'https://lh3.googleusercontent.com/d/' + FILE_ID + '=w400',
+    'https://drive.google.com/thumbnail?id=' + FILE_ID + '&sz=w400',
+    'https://drive.google.com/uc?export=view&id=' + FILE_ID
+  ];
+  const SVG_FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%2312744f"/><text x="32" y="38" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="%23fff">CBESFC</text></svg>';
+
+  function tryFetch(urls, idx){
+    if(idx >= urls.length){ setAll(SVG_FALLBACK); return; }
+    fetch(urls[idx], {mode:'cors', cache:'force-cache'})
+      .then(r => { if(!r.ok) throw new Error('bad'); return r.blob(); })
+      .then(blob => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); }))
+      .then(dataUrl => setAll(dataUrl))
+      .catch(() => tryFetch(urls, idx+1));
+  }
+  function setAll(src){
+    document.querySelectorAll('img[alt*="Logo"],img[alt*="logo"],img[alt*="Club"]')
+      .forEach(img => { img.src=src; img.removeAttribute('crossorigin'); });
+  }
+  tryFetch(URLS, 0);
+})();
+
+// ===================== CONFIG =====================
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKLHa4T2BnJ8lKnjhywcT9uiZOjrTAXCTcOl0H4AAl5O0PKm1NytqBGiyFz7G8m5Lcjg/exec';
+
+const APP_PASSWORD = 'cbesurya2026';
+
+const CONTACTS = {
+  SUNIL:     "'+91 97513 96080",
+  SURYA:     "'+91 88703 34554",
+  PADMASEKAR:"'+91 93449 44235",
+  ASHWIN:    "'+91 883 890 1545",
+  JK:        "'+91 70923 82966",
+  MUTHU:     "'+91 86670 96639"
+};
+
+const els = id => document.getElementById(id);
+
+let viewMode = 'new';
+let isSaved = false;
+let ticketGiven = false;
+let currentReceiptNo = null;
+
+// ===================== PASSWORD GATE =====================
+function checkPassword(){
+  const val = els('gatePassword').value;
+  if(val === APP_PASSWORD){
+    sessionStorage.setItem('cbesfc_auth', 'ok');
+    unlockApp();
+  } else {
+    els('gateError').textContent = 'Incorrect password. Please try again.';
+    els('gatePassword').value = '';
+    els('gatePassword').focus();
+  }
+}
+els('gatePassword').addEventListener('keydown', e => { if(e.key === 'Enter') checkPassword(); });
+
+function unlockApp(){
+  els('gateView').style.display = 'none';
+  els('appRoot').style.display = 'block';
+  initForm();
+}
+
+if(sessionStorage.getItem('cbesfc_auth') === 'ok'){
+  unlockApp();
+}
+
+// ===================== FORM LOGIC =====================
+function fmtDate(d){
+  const opts = { day:'2-digit', month:'short', year:'numeric' };
+  return d.toLocaleDateString('en-IN', opts);
+}
+
+function parseAndFmtDate(v){
+  if(!v) return '';
+  if(v instanceof Date) return fmtDate(v);
+  const s = String(v).trim();
+  if(/^\d{1,2}[\s\-][A-Za-z]{3}[\s\-]\d{4}$/.test(s)) return s;
+  const d = new Date(s);
+  if(!isNaN(d.getTime())) return fmtDate(d);
+  return s;
+}
+
+// ===================== RECEIPT NUMBER — fetched from Google Sheet =====================
+function fetchNextReceiptNo(callback){
+  if(!GOOGLE_SCRIPT_URL){
+    els('receiptNo').value = 'ERROR: No Sheet URL';
+    els('receiptNo').style.color = 'red';
+    return;
+  }
+  els('receiptNo').value = 'Fetching...';
+  els('receiptNo').style.color = '';
+  fetch(GOOGLE_SCRIPT_URL + '?action=getNextReceiptNo')
+    .then(r => r.json())
+    .then(data => {
+      if(data && data.status === 'ok' && data.receiptNo){
+        callback(data.receiptNo);
+      } else {
+        els('receiptNo').value = 'ERROR: ' + (data && data.message ? data.message : 'Sheet error');
+        els('receiptNo').style.color = 'red';
+        console.error('getNextReceiptNo failed:', data);
+      }
+    })
+    .catch(err => {
+      els('receiptNo').value = 'ERROR: Cannot reach Sheet';
+      els('receiptNo').style.color = 'red';
+      console.error('fetchNextReceiptNo network error:', err);
+    });
+}
+
+function initForm(){
+  fetchNextReceiptNo(no => { els('receiptNo').value = no; els('receiptNo').style.color = ''; });
+  els('receiptDate').value = fmtDate(new Date());
+  els('contactMobile').value = CONTACTS[els('contactPerson').value];
+  els('contactPerson').addEventListener('change', () => {
+    els('contactMobile').value = CONTACTS[els('contactPerson').value];
+  });
+  ['ticketCount','ticketPrice','paidValue'].forEach(id => els(id).addEventListener('input', recalc));
+  recalc();
+}
+
+function recalc(){
+  const count = parseFloat(els('ticketCount').value) || 0;
+  const price = parseFloat(els('ticketPrice').value) || 0;
+  const paid = parseFloat(els('paidValue').value) || 0;
+  const total = count * price;
+  const pending = total - paid;
+  els('totalValue').textContent = total.toFixed(2).replace(/\.00$/,'');
+  els('pendingValue').textContent = pending.toFixed(2).replace(/\.00$/,'');
+  const box = els('pendingBox');
+  if(pending > 0){ box.classList.add('warn'); } else { box.classList.remove('warn'); }
+}
+
+function validate(){
+  const rno = els('receiptNo').value;
+  if(!rno || rno.startsWith('ERROR') || rno === 'Fetching...'){
+    alert('Receipt number not yet loaded from Google Sheet. Please wait or check your internet connection.');
+    return false;
+  }
+  if(!els('custName').value.trim()){ alert('Please enter Name'); return false; }
+  if(!els('custMobile').value.trim()){ alert('Please enter Mobile Number'); return false; }
+  if((parseFloat(els('ticketCount').value)||0) <= 0){ alert('Please enter a valid Ticket Count'); return false; }
+  return true;
+}
+
+// ===================== VIEW NAVIGATION =====================
+function goToForm(){
+  els('searchView').style.display = 'none';
+  els('receiptView').style.display = 'none';
+  els('formView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+function goToSearch(){
+  els('formView').style.display = 'none';
+  els('receiptView').style.display = 'none';
+  els('searchView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+function backToSearchResults(){
+  els('receiptView').style.display = 'none';
+  els('searchView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+function startNewReceipt(){
+  viewMode = 'new'; isSaved = false; ticketGiven = false; currentReceiptNo = null;
+  newReceipt();
+  goToForm();
+}
+
+// ===================== PENDING VISIBILITY =====================
+function updatePendingBlock(pendingRaw){
+  // pendingRaw: string like "₹500" or "₹0"
+  const num = parseFloat(String(pendingRaw).replace(/[₹,\s]/g,'')) || 0;
+  els('pendingBlock').style.display = num > 0 ? 'block' : 'none';
+}
+
+function previewReceipt(){
+  if(!validate()) return;
+  const count = parseFloat(els('ticketCount').value) || 0;
+  const price = parseFloat(els('ticketPrice').value) || 0;
+  const paid = parseFloat(els('paidValue').value) || 0;
+  const total = count * price;
+  const pending = total - paid;
+
+  els('r_no').textContent = els('receiptNo').value;
+  els('r_date').textContent = els('receiptDate').value;
+  els('r_movie').textContent = els('movieName').value;
+  els('r_name').textContent = els('custName').value;
+  els('r_mobile').textContent = els('custMobile').value;
+  els('r_count').textContent = count;
+  els('r_price').textContent = '₹' + price;
+  els('r_total').textContent = '₹' + total.toFixed(2).replace(/\.00$/,'');
+  els('r_paid').textContent = '₹' + paid.toFixed(2).replace(/\.00$/,'');
+  els('r_pending').textContent = '₹' + pending.toFixed(2).replace(/\.00$/,'');
+  els('r_mode').textContent = els('paymentMode').value;
+  els('r_remarks').textContent = els('remarks').value || '—';
+  els('r_contact').textContent = els('contactPerson').value;
+  els('r_contactmobile').textContent = CONTACTS[els('contactPerson').value];
+  // Ghost name in "Received By"
+  els('r_ghost_name').textContent = els('custName').value.toUpperCase();
+
+  updatePendingBlock('₹' + pending.toFixed(2));
+
+  viewMode = 'new';
+  isSaved = false;
+  ticketGiven = false;
+  currentReceiptNo = els('receiptNo').value;
+  updateActionButtons();
+
+  els('formView').style.display = 'none';
+  els('searchView').style.display = 'none';
+  els('receiptView').style.display = 'block';
+  els('saveStatus').textContent = '';
+  window.scrollTo(0,0);
+}
+
+function editReceipt(){
+  els('receiptNo').value    = els('r_no').textContent;
+  els('receiptDate').value  = els('r_date').textContent;
+  els('movieName').value    = els('r_movie').textContent;
+  els('custName').value     = els('r_name').textContent;
+  els('custMobile').value   = els('r_mobile').textContent;
+  els('ticketCount').value  = els('r_count').textContent;
+
+  const stripRs = s => s.replace(/^₹/, '');
+  els('ticketPrice').value  = stripRs(els('r_price').textContent);
+  els('paidValue').value    = stripRs(els('r_paid').textContent);
+  els('remarks').value      = els('r_remarks').textContent === '—' ? '' : els('r_remarks').textContent;
+  els('paymentMode').value  = els('r_mode').textContent;
+
+  const cp = els('r_contact').textContent;
+  if(els('contactPerson').querySelector('option[value="'+cp+'"]'))
+    els('contactPerson').value = cp;
+  els('contactMobile').value = els('r_contactmobile').textContent;
+
+  // Make receipt no editable again for editing
+  els('receiptNo').removeAttribute('readonly');
+  els('receiptNo').style.background = '#fbfbfb';
+
+  isSaved = false;
+  viewMode = 'new';
+
+  recalc();
+  els('receiptView').style.display = 'none';
+  els('formView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function newReceipt(){
+  els('custName').value = '';
+  els('custMobile').value = '';
+  els('ticketCount').value = 0;
+  els('ticketPrice').value = 0;
+  els('paidValue').value = 0;
+  els('remarks').value = '';
+  els('paymentMode').value = 'UPI';
+  // Fetch fresh receipt number from sheet — no local fallback
+  els('receiptNo').setAttribute('readonly', true);
+  els('receiptNo').style.background = '#f0f0f0';
+  fetchNextReceiptNo(no => { els('receiptNo').value = no; els('receiptNo').style.color = ''; });
+  els('receiptDate').value = fmtDate(new Date());
+  recalc();
+}
+
+// ===================== BUTTON STATE =====================
+function updateActionButtons(){
+  els('btnEdit').style.display = 'inline-block';
+  els('btnBackSearch').style.display = (viewMode === 'search') ? 'inline-block' : 'none';
+  els('btnSave').style.display = isSaved ? 'none' : 'inline-block';
+  els('btnMarkGiven').style.display = (isSaved && !ticketGiven) ? 'inline-block' : 'none';
+  els('givenBadge').style.display = ticketGiven ? 'flex' : 'none';
+  els('btnMarkGiven').disabled = false;
+  els('btnMarkGiven').textContent = '✔ Mark Ticket Given';
+  refreshStamp();
+}
+function refreshStamp(){
+  els('ticketStamp').style.display = ticketGiven ? 'block' : 'none';
+}
+
+// ===================== SAVE TO SHEET =====================
+function saveToSheet(){
+  const statusEl = els('saveStatus');
+  if(!GOOGLE_SCRIPT_URL){
+    statusEl.textContent = 'No Google Sheet URL configured.';
+    statusEl.className = 'err';
+    return;
+  }
+  const payload = {
+    action: 'save',
+    receiptNo: els('r_no').textContent,
+    date: els('r_date').textContent,
+    movieName: els('r_movie').textContent,
+    name: els('r_name').textContent,
+    mobile: els('r_mobile').textContent,
+    ticketCount: els('r_count').textContent,
+    perTicketPrice: els('r_price').textContent,
+    totalValue: els('r_total').textContent,
+    paidValue: els('r_paid').textContent,
+    pendingToPay: els('r_pending').textContent,
+    paymentMode: els('r_mode').textContent,
+    remarks: els('r_remarks').textContent,
+    contactPerson: els('r_contact').textContent,
+    contactMobile: els('r_contactmobile').textContent
+  };
+
+  statusEl.textContent = 'Saving...';
+  statusEl.className = '';
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data && data.status === 'ok'){
+      isSaved = true;
+      currentReceiptNo = payload.receiptNo;
+      updateActionButtons();
+      statusEl.textContent = '✔ Saved to Google Sheet successfully.';
+      statusEl.className = 'ok';
+    } else {
+      statusEl.textContent = 'Saved, but response was unexpected. Please verify in the sheet.';
+      statusEl.className = 'err';
+    }
+  })
+  .catch(err => {
+    statusEl.textContent = '✖ Could not reach Google Sheet. Check the script URL / deployment.';
+    statusEl.className = 'err';
+    console.error(err);
+  });
+}
+
+// ===================== SEARCH / VIEW SAVED RECEIPTS =====================
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function isGivenValue(v){
+  return v === true || v === 'TRUE' || v === 'true';
+}
+
+function fetchAndRender(url){
+  const statusEl = els('searchStatus');
+  statusEl.textContent = 'Loading...';
+  els('searchResults').innerHTML = '';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if(data && data.status === 'ok'){
+        renderResults(data.receipts || []);
+        statusEl.textContent = (data.receipts || []).length + ' receipt(s) found.';
+      } else {
+        statusEl.textContent = 'Error: ' + (data && data.message ? data.message : 'unknown error');
+      }
+    })
+    .catch(err => {
+      statusEl.textContent = '✖ Could not reach Google Sheet.';
+      console.error(err);
+    });
+}
+
+function doSearch(){
+  if(!GOOGLE_SCRIPT_URL){ els('searchStatus').textContent = 'No Google Sheet URL configured.'; return; }
+  const q = encodeURIComponent(els('searchQuery').value.trim());
+  fetchAndRender(GOOGLE_SCRIPT_URL + '?action=search&q=' + q);
+}
+function showAllReceipts(){
+  if(!GOOGLE_SCRIPT_URL){ els('searchStatus').textContent = 'No Google Sheet URL configured.'; return; }
+  fetchAndRender(GOOGLE_SCRIPT_URL + '?action=list');
+}
+
+function renderResults(list){
+  const container = els('searchResults');
+  container.innerHTML = '';
+  if(!list.length){
+    container.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:8px 4px;">No receipts found.</div>';
+    return;
+  }
+  list.forEach(rec => {
+    const given = isGivenValue(rec['Ticket Given']);
+    const div = document.createElement('div');
+    div.className = 'result-item';
+    div.innerHTML =
+      '<div class="ri-top"><strong>' + escapeHtml(rec['Name']) + '</strong>' +
+      '<span class="ri-badge' + (given ? ' given' : '') + '">' + (given ? 'Ticket Given' : 'Pending') + '</span></div>' +
+      '<div class="ri-sub">' + escapeHtml(rec['Receipt No']) + ' · ' + escapeHtml(rec['Mobile Number']) + ' · ' + escapeHtml(rec['Date']) + '</div>';
+    div.addEventListener('click', () => openSavedReceipt(rec));
+    container.appendChild(div);
+  });
+}
+
+function openSavedReceipt(rec){
+  els('r_no').textContent = rec['Receipt No'] || '';
+  els('r_date').textContent = parseAndFmtDate(rec['Date']);
+  els('r_movie').textContent = rec['Movie Name'] || '';
+  els('r_name').textContent = rec['Name'] || '';
+  els('r_mobile').textContent = rec['Mobile Number'] || '';
+  els('r_count').textContent = rec['Ticket Count'] || '';
+  els('r_price').textContent = rec['Per Ticket Price'] || '';
+  els('r_total').textContent = rec['Total Value'] || '';
+  els('r_paid').textContent = rec['Paid Value'] || '';
+  els('r_pending').textContent = rec['Pending To Pay'] || '';
+  els('r_mode').textContent = rec['Payment Mode'] || '';
+  els('r_remarks').textContent = rec['Remarks'] || '—';
+  els('r_contact').textContent = rec['Contact Person'] || '';
+  els('r_contactmobile').textContent = rec['Contact Mobile'] || '';
+  // Ghost name
+  els('r_ghost_name').textContent = (rec['Name'] || '').toUpperCase();
+
+  updatePendingBlock(rec['Pending To Pay'] || '0');
+
+  viewMode = 'search';
+  isSaved = true;
+  ticketGiven = isGivenValue(rec['Ticket Given']);
+  currentReceiptNo = rec['Receipt No'];
+  updateActionButtons();
+
+  els('formView').style.display = 'none';
+  els('searchView').style.display = 'none';
+  els('receiptView').style.display = 'block';
+  els('saveStatus').textContent = '';
+  window.scrollTo(0,0);
+}
+
+function markTicketGiven(){
+  if(!GOOGLE_SCRIPT_URL){ alert('No Google Sheet URL configured.'); return; }
+  if(!currentReceiptNo){ return; }
+  const btn = els('btnMarkGiven');
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'markGiven', receiptNo: currentReceiptNo })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data && data.status === 'ok'){
+      ticketGiven = true;
+      updateActionButtons();
+    } else {
+      alert('Could not update: ' + (data && data.message ? data.message : 'unknown error'));
+      btn.disabled = false;
+      btn.textContent = '✔ Mark Ticket Given';
+    }
+  })
+  .catch(err => {
+    alert('Network error while updating ticket status.');
+    btn.disabled = false;
+    btn.textContent = '✔ Mark Ticket Given';
+    console.error(err);
+  });
+}
+
+// ===================== IMAGE DOWNLOAD =====================
+function downloadImage(){
+  if(typeof html2canvas === 'undefined'){
+    alert('Image library did not load. Check your internet connection and try again.');
+    return;
+  }
+  html2canvas(els('voucherNode'), { scale: 2, backgroundColor: '#fffdf7', useCORS: true })
+    .then(canvas => {
+      const link = document.createElement('a');
+      link.download = (currentReceiptNo || 'receipt') + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    })
+    .catch(err => {
+      alert('Could not generate the receipt image.');
+      console.error(err);
+    });
+}
+</script>
+
+<!--
+=======================================================================
+GOOGLE APPS SCRIPT — paste this into your Apps Script project
+=======================================================================
+
+Add/replace the doGet handler section with this to support getNextReceiptNo:
+
+function doGet(e) {
+  const action = e.parameter.action || '';
+
+  if (action === 'getNextReceiptNo') {
+    return getNextReceiptNo_();
+  }
+  if (action === 'search') {
+    return searchReceipts_(e.parameter.q || '');
+  }
+  if (action === 'list') {
+    return listReceipts_();
+  }
+  return ContentService.createTextOutput(
+    JSON.stringify({ status: 'error', message: 'Unknown action' })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getNextReceiptNo_() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Receipts') || ss.getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    // Column B (index 2) = Receipt No. Data starts at row 2 (row 1 = header).
+    let maxNum = 0;
+    if (lastRow >= 2) {
+      const col = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+      col.forEach(v => {
+        const m = String(v).match(/CBESFC[\/\-](?:VAS|R)(\d+)/i);
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+      });
+    }
+    const nextNo = 'CBESFC/R' + String(maxNum + 1).padStart(5, '0');
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: 'ok', receiptNo: nextNo })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: 'error', message: err.message })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+=======================================================================
+-->
+</body>
+</html>
