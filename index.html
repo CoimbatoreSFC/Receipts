@@ -262,69 +262,129 @@
   }
   .given-note button{background:none;border:0;color:var(--green-dark);text-decoration:underline;font-weight:600;font-size:.8rem;cursor:pointer;}
 
-  /* ---------- VOUCHER (ticket style) ---------- */
+  /* ---------- VOUCHER (receipt) ---------- */
   .voucher{
-    position:relative;background:var(--paper);
-    border:1.5px solid var(--green);border-radius:14px;
+    position:relative;background:#fff;border:1px solid #bfdccf;border-radius:16px;
     width:100%;max-width:680px;margin:0 auto;overflow:hidden;
-    font-size:13px;color:var(--ink);
+    font-size:13px;color:var(--ink);box-shadow:0 8px 28px rgba(14,35,64,.12);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
   .ticket-stamp{
-    display:none;position:absolute;top:118px;right:14px;z-index:5;pointer-events:none;
-    border:3px solid #1a7d3a;color:#1a7d3a;font-weight:800;font-size:.8rem;letter-spacing:1px;
-    padding:4px 10px;border-radius:6px;transform:rotate(-9deg);background:rgba(255,255,255,.8);
+    display:none;position:absolute;top:150px;right:18px;z-index:5;pointer-events:none;
+    border:3px solid #1a7d3a;color:#1a7d3a;font-weight:800;font-size:.85rem;letter-spacing:1.5px;
+    padding:5px 12px;border-radius:6px;transform:rotate(-9deg);background:rgba(255,255,255,.85);
   }
   .ticket-stamp.on{display:block;}
+
   .v-band{
-    background:var(--green);color:#fff;display:flex;align-items:center;gap:12px;padding:14px 16px;
+    background:linear-gradient(135deg,#094a33 0%,#0f7a52 62%,#15935f 100%);
+    color:#fff;display:flex;align-items:center;gap:14px;padding:18px 18px 16px;
   }
-  .v-logo{width:68px;height:68px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff;}
-  .v-logo img{width:100%;height:100%;object-fit:cover;display:block;}
-  .v-center{flex:1;min-width:0;text-align:center;}
-  .v-clubname{font-weight:800;font-size:.95em;line-height:1.25;letter-spacing:.4px;}
-  .v-addr{font-size:.74em;opacity:.9;margin-top:3px;line-height:1.35;}
-  .v-label{
-    display:inline-block;margin-top:6px;font-size:.72em;font-weight:800;letter-spacing:3px;
-    background:rgba(255,255,255,.2);border-radius:5px;padding:2px 12px;
+  .v-logo{width:92px;height:92px;border-radius:50%;overflow:hidden;flex-shrink:0;background:transparent;border:4px solid #d9a93a;position:relative;}
+  .v-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.14);}
+  .v-center{flex:1;min-width:0;}
+  .v-clubname{font-weight:800;font-size:1.32em;line-height:1.2;letter-spacing:.6px;}
+  .v-addr{font-size:.82em;opacity:.92;margin-top:5px;line-height:1.5;}
+  .v-goldbar{height:5px;background:linear-gradient(90deg,#c8992a,#f3d982,#c8992a);}
+
+  .v-titlebar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#fbf6e8;padding:12px 18px;border-bottom:1px solid #eadfb9;
   }
-  .v-body{padding:14px 16px 6px;}
-  .g2,.g3{display:grid;gap:10px 14px;margin-bottom:11px;}
-  .g2{grid-template-columns:1fr 1fr;}
-  .g3{grid-template-columns:1fr 1fr 1fr;}
-  .cell small{display:block;font-size:.72em;font-weight:700;color:var(--muted);margin-bottom:2px;}
-  .cell b{display:block;font-size:1.02em;font-weight:700;border-bottom:1px dotted #aeb5c2;padding-bottom:3px;overflow-wrap:anywhere;min-height:1.6em;}
-  .cell.hl b{color:var(--green-dark);}
-  .v-tear{position:relative;border-top:2px dashed #b9c2cf;margin:6px 0 0;}
+  .v-title{font-weight:800;font-size:1.15em;letter-spacing:3px;color:var(--navy);}
+  .v-status{
+    font-size:.74em;font-weight:800;letter-spacing:1px;padding:5px 12px;border-radius:99px;
+    background:var(--green);color:#fff;white-space:nowrap;
+  }
+  .v-status.part{background:#d97706;}
+
+  .v-meta{display:flex;gap:10px;padding:14px 18px 0;}
+  .v-meta .cell{flex:1;background:#f5f7fb;border-radius:10px;padding:9px 12px;}
+  .v-meta .cell b{border:0;padding:0;min-height:0;font-size:1.05em;color:var(--navy);}
+  .cell small{display:block;font-size:.68em;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px;}
+  .cell b{display:block;font-size:1.02em;font-weight:700;overflow-wrap:anywhere;}
+
+  .v-body{padding:14px 18px 6px;}
+  .v-from{padding:2px 0 12px;border-bottom:1px dashed #cfd6e2;margin-bottom:12px;}
+  .v-from small{display:block;font-size:.68em;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px;}
+  .v-from .nm{font-size:1.55em;font-weight:800;color:var(--navy);line-height:1.2;overflow-wrap:anywhere;}
+  .v-from .mb{font-size:1.02em;font-weight:600;color:#475467;margin-top:2px;}
+
+  .v-event{
+    display:flex;align-items:stretch;gap:0;border:1px solid #cfe3d9;border-left:5px solid var(--green);
+    border-radius:10px;background:linear-gradient(90deg,#f1f9f5,#fff);margin-bottom:12px;
+  }
+  .v-event > div{padding:10px 14px;}
+  .v-event .ev-main{flex:1;min-width:0;}
+  .v-event .ev-time{border-left:1px dashed #b9d4c7;text-align:right;flex-shrink:0;}
+  .v-event b{display:block;font-size:1.3em;font-weight:800;color:var(--green-dark);overflow-wrap:anywhere;}
+  .v-event .ev-time b{white-space:nowrap;}
+
+  .v-pay{display:flex;gap:12px;margin-bottom:6px;}
+  .v-rows{flex:1.15;min-width:0;}
+  .v-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px dotted #c3cad6;}
+  .v-row span{color:var(--muted);font-weight:600;}
+  .v-row b{font-weight:700;font-variant-numeric:tabular-nums;}
+  .v-row.total{border-bottom:1px solid #98a2b3;}
+  .v-row.total b{font-weight:800;font-size:1.05em;}
+  .v-row.pending span,.v-row.pending b{color:var(--danger);font-weight:800;}
+  .v-paidbox{
+    flex:1;border-radius:12px;color:#fff;text-align:center;padding:14px 10px;
+    background:linear-gradient(135deg,#094a33,#0f7a52);display:flex;flex-direction:column;justify-content:center;
+  }
+  .v-paidbox small{font-size:.7em;font-weight:700;letter-spacing:1.4px;opacity:.9;}
+  .v-paidbox b{font-size:2em;font-weight:800;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .v-tear{position:relative;border-top:2px dashed #b9c2cf;margin:10px 0 0;}
   .v-tear::before,.v-tear::after{
     content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;
-    background:var(--notch);border:1.5px solid var(--green);
+    background:var(--notch);border:1px solid #bfdccf;
   }
   .v-tear::before{left:-12px;}
   .v-tear::after{right:-12px;}
-  .v-amounts{
-    display:flex;gap:8px;background:var(--green-soft);padding:12px 16px;
-  }
-  .amt{flex:1;text-align:center;}
-  .amt small{display:block;font-size:.7em;font-weight:700;color:var(--muted);}
-  .amt b{font-size:1.2em;font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums;}
-  .amt.pending b{color:var(--danger);}
-  .v-remarks{padding:10px 16px 0;font-size:.9em;color:var(--muted);}
+
+  .v-remarks{padding:12px 18px 0;font-size:.92em;color:var(--muted);}
   .v-remarks b{color:var(--ink);}
-  .v-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:12px 16px 4px;font-size:.88em;color:var(--muted);}
-  .v-footer strong{color:var(--ink);}
+  .v-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:14px 18px 8px;font-size:.9em;color:var(--muted);}
+  .v-footer small{display:block;font-size:.72em;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px;}
+  .v-footer strong{color:var(--ink);font-size:1.05em;}
   .sig{text-align:center;position:relative;flex-shrink:0;}
   .sig .ghost{
-    position:absolute;left:50%;top:-6px;transform:translateX(-50%);white-space:nowrap;
-    font-weight:700;opacity:.14;letter-spacing:.5px;max-width:150px;overflow:hidden;text-overflow:ellipsis;
+    position:absolute;left:50%;top:-4px;transform:translateX(-50%);white-space:nowrap;
+    font-weight:700;opacity:.14;letter-spacing:.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;
   }
-  .sig .line{border-top:1px solid var(--ink);width:140px;margin:28px 0 4px;}
-  .v-note{text-align:center;font-size:.76em;color:var(--muted);font-style:italic;padding:6px 16px 14px;}
+  .sig .line{border-top:1px solid var(--ink);width:150px;margin:30px 0 4px;}
+  .v-thanks{
+    background:var(--green-soft);color:var(--green-dark);text-align:center;font-weight:700;
+    padding:10px 16px;font-size:.92em;border-top:1px solid #cfe3d9;
+  }
+  .v-note{text-align:center;font-size:.72em;color:var(--muted);font-style:italic;padding:7px 16px 10px;background:#fff;}
 
-  @media(max-width:400px){
-    .v-logo{width:54px;height:54px;}
-    .v-clubname{font-size:.85em;}
-    .ticket-stamp{top:104px;}
-  }
+
+  /* ---------- 4:3 WIDE LAYOUT (fixed design size, scaled to fit the screen) ---------- */
+  #vFit{width:100%;max-width:960px;margin:0 auto;position:relative;overflow:hidden;}
+  #vScale{width:960px;transform-origin:top left;}
+  .voucher{width:960px;max-width:none;height:704px;display:flex;flex-direction:column;font-size:16px;}
+  .v-band{padding:16px 28px;gap:20px;}
+  .v-clubname{font-size:1.6em;}
+  .v-addr{font-size:.95em;}
+  .v-titlebar{padding:10px 28px;}
+  .v-meta{padding:12px 28px 0;}
+  .v-body{padding:12px 28px 4px;flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;column-gap:24px;align-items:stretch;}
+  .v-from{grid-column:1;grid-row:1;margin-bottom:12px;}
+  .v-event{grid-column:1;grid-row:2;margin-bottom:6px;}
+  .v-pay{grid-column:2;grid-row:1 / span 2;flex-direction:column;margin-bottom:6px;}
+  .v-paidbox{flex:0 0 auto;padding:14px 10px;}
+  .v-rows{flex:1;}
+  .v-event{align-items:stretch;}
+  .v-event > div{display:flex;align-items:center;}
+  .v-event .ev-time{justify-content:flex-end;}
+  .v-event .ev-main .cell{flex:1;}
+  .v-event .ev-main .cell,.v-event .ev-time .cell{background:transparent;}
+  .v-remarks{padding:8px 28px 0;}
+  .v-footer{padding:10px 28px 6px;}
+  .v-thanks{padding:8px 16px;}
+  .v-note{padding:5px 16px 8px;}
+  .ticket-stamp{top:130px;right:40px;}
 
   @media print{
     :root{--notch:#fff;}
@@ -333,7 +393,9 @@
     #receiptView,#receiptView *{visibility:visible;}
     #receiptView{position:absolute;left:0;top:0;width:100%;}
     .no-print,.dock,#toast{display:none !important;}
-    .voucher{max-width:160mm;margin:0 auto;font-size:13px;box-shadow:none;}
+    #vFit{width:186mm !important;height:140mm !important;max-width:none;}
+    #vScale{transform:scale(.7396) !important;}
+    .voucher{box-shadow:none;}
     @page{size:A4;margin:12mm;}
   }
   @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
@@ -496,6 +558,7 @@
         <span class="pill" id="savePill">…</span>
       </div>
 
+      <div id="vFit"><div id="vScale">
       <div class="voucher" id="voucherNode">
         <div class="ticket-stamp" id="ticketStamp">TICKET GIVEN</div>
 
@@ -503,50 +566,61 @@
           <div class="v-logo"><img class="js-logo" alt="Club logo" crossorigin="anonymous" src="https://drive.google.com/thumbnail?id=1y4UkGZSwvVEmB3RFAcmBdbBzaJjzZpV6&sz=w400"></div>
           <div class="v-center">
             <div class="v-clubname">COIMBATORE NORTH SURIYA FANS CLUB</div>
-            <div class="v-addr">Ganapathy, Coimbatore - 641006<br>+91 97513 96080 | +91 88703 34554 | +91 93449 44235</div>
-            <div class="v-label">RECEIPT</div>
+            <div class="v-addr">Ganapathy, Coimbatore - 641006<br>+91 97513 96080 &nbsp;|&nbsp; +91 88703 34554 &nbsp;|&nbsp; +91 93449 44235</div>
           </div>
+        </div>
+        <div class="v-goldbar"></div>
+
+        <div class="v-titlebar">
+          <div class="v-title">RECEIPT</div>
+          <div class="v-status" id="r_status">PAID IN FULL</div>
+        </div>
+
+        <div class="v-meta">
+          <div class="cell"><small>Receipt no.</small><b id="r_no"></b></div>
+          <div class="cell"><small>Date</small><b id="r_date"></b></div>
         </div>
 
         <div class="v-body">
-          <div class="g2">
-            <div class="cell"><small>Receipt no.</small><b id="r_no"></b></div>
-            <div class="cell"><small>Date</small><b id="r_date"></b></div>
+          <div class="v-from">
+            <small>Received with thanks from</small>
+            <div class="nm" id="r_name"></div>
+            <div class="mb">&#128222; <span id="r_mobile"></span></div>
           </div>
-          <div class="g2">
-            <div class="cell"><small>Received with thanks from</small><b id="r_name"></b></div>
-            <div class="cell"><small>Mobile no.</small><b id="r_mobile"></b></div>
+
+          <div class="v-event">
+            <div class="ev-main"><div class="cell"><small>For the purpose of</small><b id="r_movie"></b></div></div>
+            <div class="ev-time"><div class="cell hl"><small>Show time</small><b id="r_time"></b></div></div>
           </div>
-          <div class="g2">
-            <div class="cell"><small>For the purpose of</small><b id="r_movie"></b></div>
-            <div class="cell hl"><small>Show time</small><b id="r_time"></b></div>
-          </div>
-          <div class="g3">
-            <div class="cell"><small>Tickets</small><b id="r_count"></b></div>
-            <div class="cell"><small>Per ticket</small><b id="r_price"></b></div>
-            <div class="cell"><small>Paid by</small><b id="r_mode"></b></div>
+
+          <div class="v-pay">
+            <div class="v-rows">
+              <div class="v-row"><span>Tickets</span><b id="r_count"></b></div>
+              <div class="v-row"><span>Per ticket</span><b id="r_price"></b></div>
+              <div class="v-row"><span>Paid by</span><b id="r_mode"></b></div>
+              <div class="v-row total"><span>Total value</span><b id="r_total"></b></div>
+              <div class="v-row pending" id="pendingBlock"><span>Pending</span><b id="r_pending"></b></div>
+            </div>
+            <div class="v-paidbox"><small>AMOUNT RECEIVED</small><b id="r_paid"></b></div>
           </div>
         </div>
 
         <div class="v-tear"></div>
-        <div class="v-amounts">
-          <div class="amt"><small>Total value</small><b id="r_total"></b></div>
-          <div class="amt"><small>Paid value</small><b id="r_paid"></b></div>
-          <div class="amt pending" id="pendingBlock"><small>Pending</small><b id="r_pending"></b></div>
-        </div>
 
         <div class="v-remarks" id="remarksRow"><b>Remarks:</b> <span id="r_remarks"></span></div>
 
         <div class="v-footer">
-          <div>Contact person<br><strong id="r_contact"></strong><br><span id="r_contactmobile"></span></div>
+          <div><small>Contact person</small><strong id="r_contact"></strong><br><span id="r_contactmobile"></span></div>
           <div class="sig">
             <div class="ghost" id="r_ghost"></div>
             <div class="line"></div>
             Received by
           </div>
         </div>
+        <div class="v-thanks"> #CoimbatoreSFC &#10084;</div>
         <div class="v-note">This is a digitally generated receipt.</div>
       </div>
+      </div></div>
 
       <div class="actions no-print">
         <button class="btn btn-outline" id="btnEdit" type="button">Edit</button>
@@ -581,7 +655,7 @@
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKLHa4T2BnJ8lKnjhywcT9uiZOjrTAXCTcOl0H4AAl5O0PKm1NytqBGiyFz7G8m5Lcjg/exec';
 const APP_PASSWORD = 'cbesurya2026';
 
-const DEFAULTS = { price: 350, time: '08:00', movie: 'Scene FDFS', count: 1 };
+const DEFAULTS = { price: 350, time: '08:00', movie: 'Scene FDFS', count: 1, date: '2026-11-06' };
 
 const CONTACTS = {
   SUNIL:      '+91 97513 96080',
@@ -682,26 +756,36 @@ function toast(msg, type){
 }
 
 // All sheet calls go through here: timeout + friendly errors
-async function api(url, body){
+async function apiOnce(url, body, ms){
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 25000);
+  const timer = setTimeout(() => ctrl.abort(), ms);
   try{
     const opts = body
       ? { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(body), signal:ctrl.signal }
-      : { signal:ctrl.signal };
+      : { signal:ctrl.signal, cache:'no-store' };
     const res = await fetch(url, opts);
     const text = await res.text();
     let data;
     try{ data = JSON.parse(text); }
-    catch(e){ throw new Error('Unexpected reply from the sheet. Re-deploy the Apps Script as a new version.'); }
+    catch(e){ throw new Error('Unexpected reply from the sheet. Re-deploy the Apps Script as a new version (Execute as: Me, Access: Anyone).'); }
     if(!data || data.status !== 'ok') throw new Error((data && data.message) || 'The sheet returned an error.');
     return data;
-  }catch(e){
-    if(e.name === 'AbortError') throw new Error('Timed out. Check your internet connection.');
-    if(e instanceof TypeError) throw new Error('Cannot reach the sheet. Check internet and the script deployment.');
-    throw e;
   }finally{
     clearTimeout(timer);
+  }
+}
+// Google Apps Script can take 10-30 s on a cold start, so wait longer and retry reads once.
+// Saves (POST) are never retried automatically, to avoid duplicate receipts.
+async function api(url, body){
+  try{
+    return await apiOnce(url, body, body ? 60000 : 30000);
+  }catch(e){
+    if(!body && (e.name === 'AbortError' || e instanceof TypeError)){
+      try{ return await apiOnce(url, body, 45000); }catch(e2){ e = e2; }
+    }
+    if(e.name === 'AbortError') throw new Error('The sheet is taking too long to respond. Try again in a moment.');
+    if(e instanceof TypeError) throw new Error('Cannot reach the sheet. Check internet and the script deployment.');
+    throw e;
   }
 }
 
@@ -788,7 +872,7 @@ function resetForm(){
   $('custName').value = '';
   $('custMobile').value = '';
   $('movieName').value = DEFAULTS.movie;
-  $('receiptDate').value = todayISO();
+  $('receiptDate').value = DEFAULTS.date;
   $('showTime').value = DEFAULTS.time;
   $('ticketCount').value = DEFAULTS.count;
   $('ticketPrice').value = DEFAULTS.price;
@@ -869,7 +953,7 @@ function readForm(){
   const person = $('contactPerson').value;
   return {
     receiptNo: $('receiptNo').textContent.trim(),
-    date: $('receiptDate').value || todayISO(),
+    date: $('receiptDate').value || DEFAULTS.date,
     time: $('showTime').value || DEFAULTS.time,
     movie: $('movieName').value.trim(),
     name: $('custName').value.trim(),
@@ -924,6 +1008,9 @@ function renderReceipt(d){
   $('r_contact').textContent = d.contactPerson;
   $('r_contactmobile').textContent = d.contactMobile;
   $('r_ghost').textContent = d.name.toUpperCase();
+  const st = $('r_status');
+  st.textContent = pending > 0 ? 'PARTIAL PAYMENT' : 'PAID IN FULL';
+  st.classList.toggle('part', pending > 0);
 }
 
 function updateActions(){
@@ -1134,20 +1221,34 @@ $('btnPrint').addEventListener('click', () => window.print());
 $('btnDownload').addEventListener('click', downloadImage);
 $('btnShare').addEventListener('click', shareImage);
 
+
+// Scale the fixed 4:3 receipt to fit the screen width
+function fitVoucher(){
+  const fit = $('vFit'), sc = $('vScale');
+  if(!fit || !sc) return;
+  const w = fit.parentElement.clientWidth || 960;
+  const k = Math.min(1, w / 960);
+  fit.style.width = (960 * k) + 'px';
+  fit.style.height = (704 * k) + 'px';
+  sc.style.transform = 'scale(' + k + ')';
+}
+window.addEventListener('resize', fitVoucher);
+new MutationObserver(fitVoucher).observe($('receiptView'), { attributes:true, attributeFilter:['hidden'] });
+fitVoucher();
+
 // Renders an off-screen copy at a fixed width so phones and desktops export the same image
 async function renderCanvas(){
   if(typeof html2canvas === 'undefined') throw new Error('Image library did not load. Check your internet and try again.');
+  // exact 4:3 frame: 1024 x 768
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:712px;padding:16px;background:#eef1f6;';
+  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:1024px;height:768px;padding:32px;box-sizing:border-box;background:#eef1f6;';
   const clone = $('voucherNode').cloneNode(true);
   clone.removeAttribute('id');
-  clone.style.width = '680px';
-  clone.style.maxWidth = 'none';
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
   try{
     return await html2canvas(wrap, {
-      scale: window.innerWidth < 600 ? 2 : 3,
+      scale: 1.6,
       backgroundColor: '#eef1f6',
       useCORS: true
     });
@@ -1155,8 +1256,9 @@ async function renderCanvas(){
     wrap.remove();
   }
 }
-const canvasToBlob = c => new Promise(res => c.toBlob(res, 'image/png'));
-const fileName = () => String(cur.receiptNo || 'receipt').replace(/[\/\\]/g, '-') + '.png';
+// JPEG keeps the file small (a few hundred KB instead of 1 MB+)
+const canvasToBlob = c => new Promise(res => c.toBlob(res, 'image/jpeg', 0.86));
+const fileName = () => String(cur.receiptNo || 'receipt').replace(/[\/\\]/g, '-') + '.jpg';
 
 async function downloadImage(){
   const btn = $('btnDownload'); btn.disabled = true;
@@ -1179,7 +1281,7 @@ async function shareImage(){
   try{
     const canvas = await renderCanvas();
     const blob = await canvasToBlob(canvas);
-    const file = new File([blob], fileName(), { type:'image/png' });
+    const file = new File([blob], fileName(), { type:'image/jpeg' });
     if(navigator.canShare({ files:[file] })){
       await navigator.share({ files:[file], title: 'Receipt ' + cur.receiptNo });
     }else{
