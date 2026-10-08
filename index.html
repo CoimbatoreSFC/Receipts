@@ -72,7 +72,7 @@
     background:var(--navy);padding:0 14px 12px;
   }
   .tabs-inner{
-    max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4px;
+    max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
     background:rgba(255,255,255,.1);padding:4px;border-radius:12px;
   }
   .tab{
@@ -399,6 +399,18 @@
     @page{size:A4;margin:12mm;}
   }
   @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+  .dstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .dstat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .dstat small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);}
+  .dstat b{font-size:1.35rem;font-weight:800;color:var(--navy);}
+  .dstat.red b{color:var(--danger);} .dstat.grn b{color:var(--green);}
+  .dtable{width:100%;border-collapse:collapse;font-size:.82rem;}
+  .dtable th,.dtable td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--line);}
+  .dtable th:first-child,.dtable td:first-child{text-align:left;}
+  .dtable th{font-size:.68rem;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);}
+  .drow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
+  .drow .l{min-width:0;} .drow .l small{display:block;color:var(--muted);}
+  .drow a,.drow button{flex-shrink:0;font-size:.78rem;font-weight:700;border:1.5px solid var(--green);color:var(--green-dark);background:#fff;border-radius:99px;padding:6px 11px;text-decoration:none;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -433,6 +445,7 @@
     <div class="tabs-inner">
       <button class="tab active" id="tabNew" type="button">New receipt</button>
       <button class="tab" id="tabSaved" type="button">Saved receipts</button>
+      <button class="tab" id="tabDash" type="button">Dashboard</button>
     </div>
   </nav>
 
@@ -552,6 +565,20 @@
       <div id="searchResults"></div>
     </section>
 
+    <!-- ============ DASHBOARD ============ -->
+    <section id="dashView" hidden>
+      <div class="card">
+        <h2><span class="dot"></span>Dashboard</h2>
+        <select id="dashShow" style="width:100%;padding:11px;border:1.5px solid var(--line);border-radius:11px;font:inherit;background:#fff" aria-label="Show filter"></select>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-outline" id="dashRefresh" type="button">Refresh</button>
+          <button class="btn btn-gold" id="dashCsv" type="button">Export CSV</button>
+        </div>
+        <div id="dashStatus" class="empty" style="padding:10px 0 0"></div>
+      </div>
+      <div id="dashBody"></div>
+    </section>
+
     <!-- ============ RECEIPT ============ -->
     <section id="receiptView" hidden>
       <div class="status-bar no-print">
@@ -617,7 +644,7 @@
             Received by
           </div>
         </div>
-        <div class="v-thanks"> #CoimbatoreSFC &#10084;</div>
+        <div class="v-thanks">#CoimbatoreSFC &#10084;</div>
         <div class="v-note">This is a digitally generated receipt.</div>
       </div>
       </div></div>
@@ -625,9 +652,8 @@
       <div class="actions no-print">
         <button class="btn btn-outline" id="btnEdit" type="button">Edit</button>
         <button class="btn btn-outline" id="btnBack" type="button" hidden>Back to list</button>
-        <button class="btn btn-gold" id="btnPrint" type="button">Print</button>
+        <button class="btn btn-green" id="btnWhats" type="button">WhatsApp</button>
         <button class="btn btn-outline" id="btnDownload" type="button">Download image</button>
-        <button class="btn btn-green" id="btnShare" type="button" hidden>Share</button>
         <button class="btn btn-primary full" id="btnSave" type="button" hidden>Save to sheet</button>
         <button class="btn btn-green full" id="btnGiven" type="button" hidden>Mark ticket given</button>
         <div class="given-note" id="givenNote" hidden><span>✔ Ticket given</span><button type="button" id="btnUndoGiven">Undo</button></div>
@@ -825,10 +851,11 @@ if(sessionStorage.getItem('cbesfc_auth') === 'ok') unlockApp();
 
 // ===================== NAVIGATION =====================
 function show(view){
-  ['formView','searchView','receiptView'].forEach(v => $(v).hidden = (v !== view));
+  ['formView','searchView','receiptView','dashView'].forEach(v => $(v).hidden = (v !== view));
   $('formDock').hidden = (view !== 'formView');
   $('tabNew').classList.toggle('active', view === 'formView');
   $('tabSaved').classList.toggle('active', view === 'searchView');
+  $('tabDash').classList.toggle('active', view === 'dashView');
   window.scrollTo({ top: 0 });
 }
 $('tabNew').addEventListener('click', startNewReceipt);
@@ -1019,7 +1046,6 @@ function updateActions(){
   $('btnGiven').hidden = !(session.saved && !session.given);
   $('givenNote').hidden = !session.given;
   $('ticketStamp').classList.toggle('on', session.given);
-  $('btnShare').hidden = !(navigator.share && navigator.canShare);
 
   const pill = $('savePill');
   if(session.saving){ pill.className = 'pill busy'; pill.textContent = 'Saving…'; }
@@ -1217,9 +1243,8 @@ $('btnUndoGiven').addEventListener('click', () => {
 // ===================== ACTIONS: print / image / share =====================
 $('btnEdit').addEventListener('click', editReceipt);
 $('btnSave').addEventListener('click', saveReceipt);
-$('btnPrint').addEventListener('click', () => window.print());
 $('btnDownload').addEventListener('click', downloadImage);
-$('btnShare').addEventListener('click', shareImage);
+$('btnWhats').addEventListener('click', shareWhatsApp);
 
 
 // Scale the fixed 4:3 receipt to fit the screen width
@@ -1276,16 +1301,26 @@ async function downloadImage(){
     btn.disabled = false;
   }
 }
-async function shareImage(){
-  const btn = $('btnShare'); btn.disabled = true;
+const waNum = m => { const d = String(m || '').replace(/\D/g, ''); return d.length >= 10 ? '91' + d.slice(-10) : ''; };
+const waLink = (m, text) => 'https://wa.me/' + waNum(m) + '?text=' + encodeURIComponent(text);
+
+// Mobile: share sheet with the image (pick WhatsApp). Desktop: download image + open the buyer's WhatsApp chat.
+async function shareWhatsApp(){
+  const btn = $('btnWhats'); btn.disabled = true;
+  const text = 'Hi ' + cur.name + ', Here is Your receipt  ' + cur.receiptNo + ' is attached.\n- Coimbatore North Suriya Fans Club Join our group for tickets update - < https://chat.whatsapp.com/BWN9sINaXUq456q0c0j1tD >';
   try{
     const canvas = await renderCanvas();
     const blob = await canvasToBlob(canvas);
     const file = new File([blob], fileName(), { type:'image/jpeg' });
-    if(navigator.canShare({ files:[file] })){
-      await navigator.share({ files:[file], title: 'Receipt ' + cur.receiptNo });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file], text, title:'Receipt ' + cur.receiptNo });
     }else{
-      toast('Sharing images is not supported here. Use Download.', 'err');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = fileName();
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast('Image downloaded — attach it in the WhatsApp chat', 'ok');
+      window.open(waLink(cur.mobile, text), '_blank');
     }
   }catch(e){
     if(e.name !== 'AbortError') toast(e.message || 'Could not share.', 'err');
@@ -1293,6 +1328,72 @@ async function shareImage(){
     btn.disabled = false;
   }
 }
+
+// ===================== DASHBOARD =====================
+let allRecs = [];
+const pendOf = r => Math.max(0, r.count * r.price - r.paid);
+const showKey = r => (r.movie || '—') + ' · ' + (r.time || '');
+async function loadDash(){
+  $('dashStatus').textContent = 'Loading…';
+  try{
+    const data = await api(GOOGLE_SCRIPT_URL + '?action=list&limit=5000');
+    allRecs = (data.receipts || []).map(recToData);
+    const sel = $('dashShow'), keep = sel.value;
+    const keys = Array.from(new Set(allRecs.map(showKey)));
+    sel.innerHTML = '<option value="">All shows</option>' + keys.map(k => '<option>' + escapeHtml(k) + '</option>').join('');
+    if(keys.indexOf(keep) >= 0) sel.value = keep;
+    $('dashStatus').textContent = allRecs.length + ' receipts loaded' + (allRecs.length === 200 ? ' (limit of 200 — update the Apps Script to see all)' : '');
+    renderDash();
+  }catch(e){ $('dashStatus').textContent = '✖ ' + e.message; }
+}
+function dashRows(){ const k = $('dashShow').value; return allRecs.filter(r => !k || showKey(r) === k); }
+function renderDash(){
+  const rows = dashRows();
+  const sum = f => rows.reduce((t, r) => t + f(r), 0);
+  const tix = sum(r => r.count), got = sum(r => r.paid), pend = sum(pendOf);
+  const given = sum(r => r.given ? r.count : 0);
+  let h = '<div class="dstats">' +
+    '<div class="dstat"><small>Receipts</small><b>' + rows.length + '</b></div>' +
+    '<div class="dstat"><small>Tickets</small><b>' + tix + '</b></div>' +
+    '<div class="dstat grn"><small>Collected</small><b>' + rupee(got) + '</b></div>' +
+    '<div class="dstat red"><small>Pending</small><b>' + rupee(pend) + '</b></div></div>';
+
+  // per-show summary
+  const by = {};
+  rows.forEach(r => { const k = showKey(r); const o = by[k] = by[k] || { n:0, t:0, c:0, p:0, g:0 };
+    o.n++; o.t += r.count; o.c += r.paid; o.p += pendOf(r); o.g += r.given ? r.count : 0; });
+  h += '<div class="card"><h2><span class="dot"></span>By show</h2><div style="overflow-x:auto"><table class="dtable"><tr><th>Show</th><th>Tix</th><th>Collected</th><th>Pending</th></tr>' +
+    Object.keys(by).map(k => '<tr><td>' + escapeHtml(k) + '</td><td>' + by[k].t + '</td><td>' + rupee(by[k].c) + '</td><td>' + rupee(by[k].p) + '</td></tr>').join('') + '</table></div></div>';
+
+  // pending payments
+  const due = rows.filter(r => pendOf(r) > 0).sort((a, b) => pendOf(b) - pendOf(a));
+  h += '<div class="card"><h2><span class="dot"></span>Pending payments (' + due.length + ')</h2>' +
+    (due.length ? due.map((r, i) => '<div class="drow"><div class="l"><b>' + escapeHtml(r.name) + '</b> · ' + rupee(pendOf(r)) + '<small>' + escapeHtml(r.receiptNo) + ' · ' + escapeHtml(r.mobile) + '</small></div>' +
+      '<a target="_blank" rel="noopener" href="' + waLink(r.mobile, 'Hi ' + r.name + ', a balance of ' + rupee(pendOf(r)) + ' is pending for ' + (r.movie || 'your booking') + ' (receipt ' + r.receiptNo + '). Please pay at the earliest. Thank you! - Coimbatore North Suriya Fans Club') + '">Remind</a></div>').join('') : '<div class="empty">No pending payments 🎉</div>') + '</div>';
+
+  // tickets-given tracker
+  const ng = rows.filter(r => !r.given);
+  h += '<div class="card"><h2><span class="dot"></span>Tickets given: ' + given + ' of ' + tix + ' · not given: ' + (tix - given) + '</h2>' +
+    (ng.length ? ng.map((r, i) => '<div class="drow"><div class="l"><b>' + escapeHtml(r.name) + '</b> · ' + r.count + ' ticket' + (r.count === 1 ? '' : 's') + '<small>' + escapeHtml(r.receiptNo) + ' · ' + escapeHtml(r.mobile) + '</small></div><button type="button" data-open="' + i + '">Open</button></div>').join('') : '<div class="empty">All tickets given ✔</div>') + '</div>';
+  $('dashBody').innerHTML = h;
+  $('dashBody').querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openSaved(ng[+b.dataset.open])));
+}
+function exportCsv(){
+  const rows = dashRows();
+  if(!rows.length){ toast('Nothing to export', 'err'); return; }
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const head = ['Receipt No','Date','Show','Show Time','Name','Mobile','Tickets','Per Ticket','Total','Paid','Pending','Payment Mode','Ticket Given','Remarks','Contact Person'];
+  const lines = [head.map(q).join(',')].concat(rows.map(r => [r.receiptNo, fmtDate(r.date), r.movie, r.time, r.name, "'" + r.mobile, r.count, r.price, r.count * r.price, r.paid, pendOf(r), r.mode, r.given ? 'Yes' : 'No', r.remarks, r.contactPerson].map(q).join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'receipts-' + todayISO() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+$('dashShow').addEventListener('change', renderDash);
+$('dashRefresh').addEventListener('click', loadDash);
+$('dashCsv').addEventListener('click', exportCsv);
+$('tabDash').addEventListener('click', () => { show('dashView'); loadDash(); });
 </script>
 </body>
 </html>
