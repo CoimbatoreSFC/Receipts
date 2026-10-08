@@ -1307,7 +1307,7 @@ const waLink = (m, text) => 'https://wa.me/' + waNum(m) + '?text=' + encodeURICo
 // Mobile: share sheet with the image (pick WhatsApp). Desktop: download image + open the buyer's WhatsApp chat.
 async function shareWhatsApp(){
   const btn = $('btnWhats'); btn.disabled = true;
-  const text = 'Hi ' + cur.name + ', Here is Your receipt  ' + cur.receiptNo + ' is attached.\n- Coimbatore North Suriya Fans Club Join our group for tickets update - < https://chat.whatsapp.com/BWN9sINaXUq456q0c0j1tD >';
+  const text = 'Hi ' + cur.name + ', Here is Your receipt  ' + cur.receiptNo + ' is attached.\n- Join our group for tickets update - < https://chat.whatsapp.com/BWN9sINaXUq456q0c0j1tD >';
   try{
     const canvas = await renderCanvas();
     const blob = await canvasToBlob(canvas);
