@@ -483,10 +483,10 @@
             <label for="receiptDate">Date</label>
             <input type="date" id="receiptDate">
           </div>
-          <div class="field">
-            <label for="showTime">Show time</label>
-            <input type="time" id="showTime" value="08:00">
-          </div>
+            <div class="field">
+              <label>Show</label>
+              <input type="text" value="Earliest Show in CBE" readonly>
+            </div>
         </div>
       </div>
 
@@ -617,7 +617,7 @@
 
           <div class="v-event">
             <div class="ev-main"><div class="cell"><small>For the purpose of</small><b id="r_movie"></b></div></div>
-            <div class="ev-time"><div class="cell hl"><small>Show time</small><b id="r_time"></b></div></div>
+            <div class="ev-time"><div class="cell hl"><small>Show</small><b>Earliest Show in CBE</b></div></div>
           </div>
 
           <div class="v-pay">
@@ -681,7 +681,7 @@
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKLHa4T2BnJ8lKnjhywcT9uiZOjrTAXCTcOl0H4AAl5O0PKm1NytqBGiyFz7G8m5Lcjg/exec';
 const APP_PASSWORD = 'cbesurya2026';
 
-const DEFAULTS = { price: 350, time: '08:00', movie: 'Scene FDFS', count: 1, date: '2026-11-06' };
+const DEFAULTS = { price: 350, movie: 'Scene FDFS', count: 1, date: '2026-11-06' };
 
 const CONTACTS = {
   SUNIL:      '+91 97513 96080',
@@ -740,22 +740,6 @@ function parseDateISO(v){
   }
   const d = new Date(s);
   return isNaN(d.getTime()) ? todayISO() : dateToISO(d);
-}
-function parseTime(v){
-  if(!v) return null;
-  const m = String(v).trim().match(/^(\d{1,2})[:.](\d{2})\s*([AaPp][Mm])?$/);
-  if(!m) return null;
-  let h = +m[1]; const ap = m[3] && m[3].toLowerCase();
-  if(ap === 'pm' && h < 12) h += 12;
-  if(ap === 'am' && h === 12) h = 0;
-  return h > 23 ? null : pad(h) + ':' + m[2];
-}
-function fmtTime(hhmm){
-  if(!hhmm) return '';
-  let [h, m] = hhmm.split(':').map(Number);
-  const ap = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  return h + ':' + pad(m) + ' ' + ap;
 }
 const toNum = v => parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')) || 0;
 const rupee = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -900,7 +884,6 @@ function resetForm(){
   $('custMobile').value = '';
   $('movieName').value = DEFAULTS.movie;
   $('receiptDate').value = DEFAULTS.date;
-  $('showTime').value = DEFAULTS.time;
   $('ticketCount').value = DEFAULTS.count;
   $('ticketPrice').value = DEFAULTS.price;
   $('payFull').checked = true;
@@ -981,7 +964,7 @@ function readForm(){
   return {
     receiptNo: $('receiptNo').textContent.trim(),
     date: $('receiptDate').value || DEFAULTS.date,
-    time: $('showTime').value || DEFAULTS.time,
+    time: 'Earliest Show in CBE',
     movie: $('movieName').value.trim(),
     name: $('custName').value.trim(),
     mobile: normalizeMobile($('custMobile').value),
@@ -996,7 +979,6 @@ function readForm(){
 function fillForm(d){
   setReceiptNo(d.receiptNo);
   $('receiptDate').value = d.date;
-  $('showTime').value = d.time;
   $('movieName').value = d.movie;
   $('custName').value = d.name;
   $('custMobile').value = d.mobile;
@@ -1022,7 +1004,6 @@ function renderReceipt(d){
   $('r_name').textContent = d.name;
   $('r_mobile').textContent = d.mobile;
   $('r_movie').textContent = d.movie || '—';
-  $('r_time').textContent = fmtTime(d.time);
   $('r_count').textContent = d.count;
   $('r_price').textContent = rupee(d.price);
   $('r_mode').textContent = d.mode;
@@ -1087,7 +1068,7 @@ async function saveReceipt(){
     isNew: session.isNew,
     receiptNo: cur.receiptNo,
     date: fmtDate(cur.date),
-    showTime: fmtTime(cur.time),
+    showTime: 'Earliest Show in CBE',
     movieName: cur.movie,
     name: cur.name,
     mobile: cur.mobile,
@@ -1131,7 +1112,7 @@ function recToData(rec){
   return {
     receiptNo: String(rec['Receipt No'] || '').trim(),
     date: parseDateISO(rec['Date']),
-    time: parseTime(rec['Show Time']) || DEFAULTS.time,
+    time: 'Earliest Show in CBE',
     movie: String(rec['Movie Name'] || ''),
     name: String(rec['Name'] || ''),
     mobile: cleanPhone(rec['Mobile Number']),
@@ -1332,7 +1313,7 @@ async function shareWhatsApp(){
 // ===================== DASHBOARD =====================
 let allRecs = [];
 const pendOf = r => Math.max(0, r.count * r.price - r.paid);
-const showKey = r => (r.movie || '—') + ' · ' + (r.time || '');
+const showKey = r => r.movie || '—';
 async function loadDash(){
   $('dashStatus').textContent = 'Loading…';
   try{
@@ -1382,8 +1363,8 @@ function exportCsv(){
   const rows = dashRows();
   if(!rows.length){ toast('Nothing to export', 'err'); return; }
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const head = ['Receipt No','Date','Show','Show Time','Name','Mobile','Tickets','Per Ticket','Total','Paid','Pending','Payment Mode','Ticket Given','Remarks','Contact Person'];
-  const lines = [head.map(q).join(',')].concat(rows.map(r => [r.receiptNo, fmtDate(r.date), r.movie, r.time, r.name, "'" + r.mobile, r.count, r.price, r.count * r.price, r.paid, pendOf(r), r.mode, r.given ? 'Yes' : 'No', r.remarks, r.contactPerson].map(q).join(',')));
+  const head = ['Receipt No','Date','Show','Name','Mobile','Tickets','Per Ticket','Total','Paid','Pending','Payment Mode','Ticket Given','Remarks','Contact Person'];
+  const lines = [head.map(q).join(',')].concat(rows.map(r => [r.receiptNo, fmtDate(r.date), r.movie, r.name, "'" + r.mobile, r.count, r.price, r.count * r.price, r.paid, pendOf(r), r.mode, r.given ? 'Yes' : 'No', r.remarks, r.contactPerson].map(q).join(',')));
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'receipts-' + todayISO() + '.csv';
