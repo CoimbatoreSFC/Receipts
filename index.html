@@ -846,9 +846,25 @@ let activeFilter = 'all';
 let listToken = 0;
 
 // ===================== PASSWORD GATE =====================
+// stay unlocked on this device for 30 days (until "Lock" is pressed)
+const AUTH_KEY = 'cbesfc_auth', AUTH_DAYS = 30;
+function setAuth(){
+  const exp = String(Date.now() + AUTH_DAYS * 864e5);
+  try{ localStorage.setItem(AUTH_KEY, exp); }catch(e){ try{ sessionStorage.setItem(AUTH_KEY, exp); }catch(e2){} }
+}
+function isAuthed(){
+  let v = null;
+  try{ v = localStorage.getItem(AUTH_KEY); }catch(e){}
+  if(!v){ try{ v = sessionStorage.getItem(AUTH_KEY); }catch(e){} }
+  return !!v && Number(v) > Date.now();
+}
+function clearAuth(){
+  try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+  try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
+}
 function checkPassword(){
   if($('gatePassword').value === APP_PASSWORD){
-    sessionStorage.setItem('cbesfc_auth', 'ok');
+    setAuth();
     unlockApp();
   }else{
     $('gateError').textContent = 'Incorrect password. Try again.';
@@ -865,10 +881,10 @@ function unlockApp(){
   initForm();
 }
 $('logoutBtn').addEventListener('click', () => {
-  sessionStorage.removeItem('cbesfc_auth');
+  clearAuth();
   location.reload();
 });
-if(sessionStorage.getItem('cbesfc_auth') === 'ok') unlockApp();
+if(isAuthed()) unlockApp();
 
 // ===================== NAVIGATION =====================
 function show(view){
