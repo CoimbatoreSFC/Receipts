@@ -399,6 +399,19 @@
     @page{size:A4;margin:12mm;}
   }
   @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+  .anasel{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:11px;font:inherit;background:#fff}
+  #anaRange .chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .bar{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:.84rem}
+  .bar .lb{flex:0 0 34%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--navy)}
+  .bar .tr{flex:1;height:14px;background:var(--page);border-radius:7px;overflow:hidden;display:flex}
+  .bar .tr i{display:block;height:100%}
+  .bar .vl{flex:0 0 auto;min-width:64px;text-align:right;font-weight:700;color:var(--ink)}
+  .trend{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:6px;overflow-x:auto}
+  .trend div{flex:1 0 12px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+  .trend div.pk{background:var(--gold)}
+  .trend div.pj{background:repeating-linear-gradient(45deg,#7fc3a5,#7fc3a5 3px,#c9e8da 3px,#c9e8da 6px)}
+  .trendlb{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px}
+  .insight{font-size:.86rem;line-height:1.5;color:var(--ink);padding:8px 10px;background:var(--gold-soft);border-radius:10px;margin:6px 0}
   .dstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
   .dstat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;}
   .dstat small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);}
@@ -446,6 +459,7 @@
       <button class="tab active" id="tabNew" type="button">New receipt</button>
       <button class="tab" id="tabSaved" type="button">Saved receipts</button>
       <button class="tab" id="tabDash" type="button">Dashboard</button>
+      <button class="tab" id="tabAna" type="button">Analytics</button>
     </div>
   </nav>
 
@@ -577,6 +591,29 @@
         <div id="dashStatus" class="empty" style="padding:10px 0 0"></div>
       </div>
       <div id="dashBody"></div>
+    </section>
+
+    <!-- ============ ANALYTICS ============ -->
+    <section id="anaView" hidden>
+      <div class="card">
+        <h2><span class="dot"></span>Analytics</h2>
+        <select id="anaShow" class="anasel" aria-label="Show filter"></select>
+        <div class="chips" id="anaRange">
+          <button class="chip on" type="button" data-d="0">All time</button>
+          <button class="chip" type="button" data-d="30">30 days</button>
+          <button class="chip" type="button" data-d="14">14 days</button>
+          <button class="chip" type="button" data-d="7">7 days</button>
+        </div>
+        <div id="anaStatus" class="empty" style="padding:6px 0 0"></div>
+      </div>
+      <div class="card">
+        <h2><span class="dot"></span>Forecast goal <small style="font-weight:500;color:var(--muted)">(optional)</small></h2>
+        <div class="btn-row">
+          <input id="fcTarget" type="number" inputmode="numeric" min="1" placeholder="Target tickets" value="504" class="anasel" style="flex:1;min-width:120px">
+          <input id="fcDate" type="date" value="2026-11-05" class="anasel" style="flex:1;min-width:140px" aria-label="Target date (show / release date)">
+        </div>
+      </div>
+      <div id="anaBody"></div>
     </section>
 
     <!-- ============ RECEIPT ============ -->
@@ -835,11 +872,12 @@ if(sessionStorage.getItem('cbesfc_auth') === 'ok') unlockApp();
 
 // ===================== NAVIGATION =====================
 function show(view){
-  ['formView','searchView','receiptView','dashView'].forEach(v => $(v).hidden = (v !== view));
+  ['formView','searchView','receiptView','dashView','anaView'].forEach(v => $(v).hidden = (v !== view));
   $('formDock').hidden = (view !== 'formView');
   $('tabNew').classList.toggle('active', view === 'formView');
   $('tabSaved').classList.toggle('active', view === 'searchView');
   $('tabDash').classList.toggle('active', view === 'dashView');
+  $('tabAna').classList.toggle('active', view === 'anaView');
   window.scrollTo({ top: 0 });
 }
 $('tabNew').addEventListener('click', startNewReceipt);
@@ -1106,12 +1144,24 @@ async function saveReceipt(){
 }
 
 // ===================== SAVED LIST =====================
+function tsToISO(v, fallback){
+  if(v instanceof Date) return dateToISO(v);
+  const s = String(v == null ? '' : v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);          // dd/mm/yyyy (India)
+  if(m) return m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);
+  m = s.match(/^(\d{1,2})[\s\-]([A-Za-z]{3})[a-z]*[\s\-,]*(\d{4})/); // dd MMM yyyy
+  if(m){ const mi = MONTHS.findIndex(x => x.toLowerCase() === m[2].toLowerCase()); if(mi >= 0) return m[3] + '-' + pad(mi + 1) + '-' + pad(+m[1]); }
+  return parseDateISO(fallback);
+}
 function recToData(rec){
   const count = toNum(rec['Ticket Count']);
   const rm = String(rec['Remarks'] == null ? '' : rec['Remarks']).trim();
   return {
     receiptNo: String(rec['Receipt No'] || '').trim(),
     date: parseDateISO(rec['Date']),
+    ts: tsToISO(rec['Timestamp'] !== undefined ? rec['Timestamp'] : rec[Object.keys(rec)[0]], rec['Date']),
     time: 'Earliest Show in CBE',
     movie: String(rec['Movie Name'] || ''),
     name: String(rec['Name'] || ''),
@@ -1375,6 +1425,223 @@ $('dashShow').addEventListener('change', renderDash);
 $('dashRefresh').addEventListener('click', loadDash);
 $('dashCsv').addEventListener('click', exportCsv);
 $('tabDash').addEventListener('click', () => { show('dashView'); loadDash(); });
+
+// ===================== ANALYTICS =====================
+let anaDays = 0, anaDaily = [];
+async function loadAna(){
+  $('anaStatus').textContent = 'Loading…';
+  try{
+    const data = await api(GOOGLE_SCRIPT_URL + '?action=list');
+    allRecs = (data.receipts || []).map(recToData);
+    const sel = $('anaShow'), keep = sel.value;
+    const keys = Array.from(new Set(allRecs.map(showKey)));
+    sel.innerHTML = '<option value="">All shows</option>' + keys.map(k => '<option>' + escapeHtml(k) + '</option>').join('');
+    if(keys.indexOf(keep) >= 0) sel.value = keep;
+    renderAna();
+  }catch(e){ $('anaStatus').textContent = '✖ ' + e.message; }
+}
+function anaRows(){
+  const k = $('anaShow').value;
+  let rows = allRecs.filter(r => !k || showKey(r) === k);
+  if(anaDays){
+    const cut = new Date(); cut.setHours(0,0,0,0); cut.setDate(cut.getDate() - anaDays + 1);
+    const c = cut.toISOString().slice(0,10).replace(/./g, (ch, i) => ch);
+    const cs = cut.getFullYear() + '-' + String(cut.getMonth()+1).padStart(2,'0') + '-' + String(cut.getDate()).padStart(2,'0');
+    rows = rows.filter(r => r.ts && r.ts >= cs);
+  }
+  return rows;
+}
+function barRows(items, fmt, color){
+  const mx = Math.max.apply(null, items.map(i => i.v).concat([1]));
+  return items.map(i => '<div class="bar"><span class="lb" title="' + escapeHtml(i.l) + '">' + escapeHtml(i.l) + '</span><span class="tr"><i style="width:' + (i.v / mx * 100).toFixed(1) + '%;background:' + (color || 'var(--navy)') + '"></i></span><span class="vl">' + fmt(i.v) + '</span></div>').join('');
+}
+function groupBy(rows, keyFn){
+  const m = {};
+  rows.forEach(r => { const k = keyFn(r) || '—'; const o = m[k] = m[k] || { l:k, n:0, t:0, total:0, paid:0, pend:0 }; o.n++; o.t += r.count; o.total += r.count * r.price; o.paid += r.paid; o.pend += pendOf(r); });
+  return Object.keys(m).map(k => m[k]);
+}
+function renderAna(){
+  const rows = anaRows();
+  $('anaStatus').textContent = rows.length + ' receipts in view';
+  const showRows = allRecs.filter(r => !$('anaShow').value || showKey(r) === $('anaShow').value);
+  if(!rows.length){ $('anaBody').innerHTML = '<div class="card"><div class="empty">No receipts for this selection.</div></div>'; return; }
+  const sum = f => rows.reduce((t, r) => t + f(r), 0);
+  const tix = sum(r => r.count), total = sum(r => r.count * r.price), paid = sum(r => r.paid), pend = sum(pendOf);
+  const given = sum(r => r.given ? r.count : 0);
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const byCust = {};
+  rows.forEach(r => { const k = r.mobile || r.name; const o = byCust[k] = byCust[k] || { l:r.name, n:0, t:0 }; o.n++; o.t += r.count; });
+  const custs = Object.keys(byCust).map(k => byCust[k]);
+  const repeat = custs.filter(c => c.n > 1).length;
+
+  let h = '<div class="dstats">' +
+    '<div class="dstat"><small>Booked value</small><b>' + rupee(total) + '</b></div>' +
+    '<div class="dstat grn"><small>Collection rate</small><b>' + pct(paid, total) + '%</b></div>' +
+    '<div class="dstat"><small>Avg tickets / receipt</small><b>' + (tix / rows.length).toFixed(1) + '</b></div>' +
+    '<div class="dstat"><small>Avg ticket price</small><b>' + rupee(tix ? Math.round(total / tix) : 0) + '</b></div>' +
+    '<div class="dstat"><small>Unique customers</small><b>' + custs.length + '</b></div>' +
+    '<div class="dstat"><small>Repeat customers</small><b>' + pct(repeat, custs.length) + '%</b></div></div>';
+
+  // insights
+  const ins = [];
+  const days = {};
+  rows.forEach(r => { if(r.ts){ days[r.ts] = (days[r.ts] || 0) + r.count; } });
+  const dk = Object.keys(days).sort();
+  if(dk.length){ const pk = dk.reduce((a, b) => days[b] > days[a] ? b : a); ins.push('Best sales day: <b>' + fmtDate(pk) + '</b> with ' + days[pk] + ' tickets.'); }
+  if(pend > 0) ins.push(rupee(pend) + ' (' + pct(pend, total) + '% of booked value) is still to be collected.');
+  if(tix - given > 0) ins.push('<b>' + (tix - given) + '</b> of ' + tix + ' tickets (' + pct(tix - given, tix) + '%) are yet to be handed over.');
+  if(ins.length) h += ins.map(t => '<div class="insight">' + t + '</div>').join('');
+
+  // trend
+  if(dk.length){
+    const first = new Date(dk[0] + 'T00:00:00'), last = new Date(dk[dk.length - 1] + 'T00:00:00');
+    const series = [];
+    for(let d = new Date(first); d <= last && series.length < 120; d.setDate(d.getDate() + 1)){
+      const k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      series.push({ k, v: days[k] || 0 });
+    }
+    const mx = Math.max.apply(null, series.map(s => s.v).concat([1]));
+    h += '<div class="card"><h2><span class="dot"></span>Tickets sold per day</h2><div class="trend">' +
+      series.map(s => '<div class="' + (s.v === mx ? 'pk' : '') + '" style="height:' + Math.max(2, s.v / mx * 100) + '%" title="' + fmtDate(s.k) + ': ' + s.v + '"></div>').join('') +
+      '</div><div class="trendlb"><span>' + fmtDate(series[0].k) + '</span><span>' + fmtDate(series[series.length - 1].k) + '</span></div></div>';
+  }
+
+  // collection + handover split
+  h += '<div class="card"><h2><span class="dot"></span>Money &amp; tickets status</h2>' +
+    barRows([{ l:'Collected', v:paid }, { l:'Pending', v:pend }], rupee, 'var(--green)') +
+    barRows([{ l:'Tickets given', v:given }, { l:'Not given', v:tix - given }], v => v, 'var(--gold)') + '</div>';
+
+  // payment mode
+  const modes = groupBy(rows, r => r.mode).sort((a, b) => b.paid - a.paid);
+  h += '<div class="card"><h2><span class="dot"></span>Collected by payment mode</h2>' +
+    barRows(modes.map(m => ({ l: m.l + ' (' + m.n + ')', v: m.paid })), rupee, 'var(--navy)') + '</div>';
+
+  // contact person
+  const cps = groupBy(rows, r => r.contactPerson).sort((a, b) => b.t - a.t).slice(0, 10);
+  h += '<div class="card"><h2><span class="dot"></span>Top contact persons</h2><div style="overflow-x:auto"><table class="dtable"><tr><th>Person</th><th>Tix</th><th>Collected</th><th>Pending</th></tr>' +
+    cps.map(c => '<tr><td>' + escapeHtml(c.l) + '</td><td>' + c.t + '</td><td>' + rupee(c.paid) + '</td><td>' + rupee(c.pend) + '</td></tr>').join('') + '</table></div></div>';
+
+  // ticket size
+  const sizes = {};
+  rows.forEach(r => { const k = r.count >= 5 ? '5+' : String(r.count); sizes[k] = (sizes[k] || 0) + 1; });
+  h += '<div class="card"><h2><span class="dot"></span>Tickets per receipt</h2>' +
+    barRows(['1','2','3','4','5+'].filter(k => sizes[k]).map(k => ({ l: k + (k === '1' ? ' ticket' : ' tickets'), v: sizes[k] })), v => v + ' rcpts', 'var(--green)') + '</div>';
+
+  // top customers
+  const top = custs.sort((a, b) => b.t - a.t).slice(0, 8);
+  h += '<div class="card"><h2><span class="dot"></span>Top customers (by tickets)</h2>' +
+    barRows(top.map(c => ({ l: c.l, v: c.t })), v => v + ' tix', 'var(--gold)') + '</div>';
+
+  // by show
+  const shows = groupBy(rows, showKey).sort((a, b) => b.total - a.total);
+  if(shows.length > 1) h += '<div class="card"><h2><span class="dot"></span>Booked value by show</h2>' + barRows(shows.map(s => ({ l: s.l, v: s.total })), rupee, 'var(--navy)') + '</div>';
+
+
+  // ---------- date-wise details ----------
+  const isoOf = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dw = {};
+  rows.forEach(r => { if(!r.ts) return; const o = dw[r.ts] = dw[r.ts] || { d:r.ts, n:0, t:0, val:0, paid:0, pend:0 }; o.n++; o.t += r.count; o.val += r.count * r.price; o.paid += r.paid; o.pend += pendOf(r); });
+  const dwl = Object.keys(dw).sort().map(k => dw[k]);
+  let cum = 0; dwl.forEach(o => { cum += o.t; o.cum = cum; });
+  anaDaily = dwl;
+  if(dwl.length){
+    h += '<div class="card"><h2><span class="dot"></span>Date-wise tickets sold <small style="font-weight:500;color:var(--muted)">(by booking date)</small></h2><div style="overflow-x:auto"><table class="dtable"><tr><th>Date</th><th>Rcpts</th><th>Tix</th><th>Value</th><th>Collected</th><th>Pending</th><th>Total tix</th></tr>' +
+      dwl.map(o => '<tr><td>' + fmtDate(o.d) + ' <small style="color:var(--muted)">' + WD[new Date(o.d + 'T00:00:00').getDay()] + '</small></td><td>' + o.n + '</td><td><b>' + o.t + '</b></td><td>' + rupee(o.val) + '</td><td>' + rupee(o.paid) + '</td><td>' + rupee(o.pend) + '</td><td>' + o.cum + '</td></tr>').join('') +
+      '<tr><td><b>Total</b></td><td><b>' + rows.length + '</b></td><td><b>' + tix + '</b></td><td><b>' + rupee(total) + '</b></td><td><b>' + rupee(paid) + '</b></td><td><b>' + rupee(pend) + '</b></td><td></td></tr></table></div>' +
+      '<div class="btn-row" style="margin-top:10px"><button class="btn btn-gold" id="dailyCsv" type="button">Export date-wise CSV</button></div></div>';
+  }
+
+  // ---------- forecast ----------
+  const sd = {};
+  showRows.forEach(r => { if(r.ts) sd[r.ts] = (sd[r.ts] || 0) + r.count; });
+  const sk = Object.keys(sd).sort();
+  if(sk.length){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const lastSale = new Date(sk[sk.length - 1] + 'T00:00:00');
+    const end = lastSale > today ? lastSale : today;
+    const ser = [];
+    for(let d = new Date(sk[0] + 'T00:00:00'); d <= end && ser.length < 400; d.setDate(d.getDate() + 1)) ser.push({ k:isoOf(d), v:sd[isoOf(d)] || 0 });
+    const n = ser.length, tixAll = ser.reduce((t, s) => t + s.v, 0);
+    const avg = (a, b) => { const sl = ser.slice(Math.max(0, a), Math.max(0, b)); return sl.length ? sl.reduce((t, s) => t + s.v, 0) / sl.length : 0; };
+    const a7 = avg(n - 7, n), p7 = avg(n - 14, n - 7), a3 = avg(n - 3, n);
+    // linear trend on last 14 days
+    const w = ser.slice(-14), m = w.length;
+    let b = 0, a0 = a7;
+    if(m >= 4){
+      const mx = (m - 1) / 2, my = w.reduce((t, s) => t + s.v, 0) / m;
+      let nu = 0, de = 0; w.forEach((s, i) => { nu += (i - mx) * (s.v - my); de += (i - mx) * (i - mx); });
+      b = de ? nu / de : 0; a0 = my - b * mx;
+    }
+    const capD = Math.max.apply(null, w.map(s => s.v).concat([1]));
+    const proj = []; for(let i = 1; i <= 7; i++){ const dd = new Date(end); dd.setDate(dd.getDate() + i); proj.push({ k:isoOf(dd), v:Math.min(capD, Math.max(0, Math.round(a0 + b * (m - 1 + i)))) }); }
+    const p7sum = proj.reduce((t, s) => t + s.v, 0);
+    const price = tixAll ? showRows.reduce((t, r) => t + r.count * r.price, 0) / showRows.reduce((t, r) => t + r.count, 0) : 0;
+    const chg = p7 ? Math.round((a7 - p7) / p7 * 100) : null;
+    const trendTxt = chg === null ? 'not enough history to compare' : (chg >= 0 ? '▲ ' + chg + '% vs previous 7 days' : '▼ ' + Math.abs(chg) + '% vs previous 7 days');
+
+    h += '<div class="card"><h2><span class="dot"></span>Forecast (next 7 days)</h2>' +
+      '<div class="dstats">' +
+      '<div class="dstat"><small>Avg / day (last 7d)</small><b>' + a7.toFixed(1) + '</b></div>' +
+      '<div class="dstat"><small>Avg / day (last 3d)</small><b>' + a3.toFixed(1) + '</b></div>' +
+      '<div class="dstat grn"><small>Projected tickets</small><b>' + p7sum + '</b></div>' +
+      '<div class="dstat grn"><small>Projected value</small><b>' + rupee(Math.round(p7sum * price)) + '</b></div></div>' +
+      '<div class="insight">Momentum: <b>' + trendTxt + '</b>.</div>';
+    const show14 = ser.slice(-14).map(s => ({ k:s.k, v:s.v, f:false })).concat(proj.map(s => ({ k:s.k, v:s.v, f:true })));
+    const mxv = Math.max.apply(null, show14.map(s => s.v).concat([1]));
+    h += '<div class="trend">' + show14.map(s => '<div class="' + (s.f ? 'pj' : '') + '" style="height:' + Math.max(2, s.v / mxv * 100) + '%" title="' + fmtDate(s.k) + (s.f ? ' (forecast)' : '') + ': ' + s.v + '"></div>').join('') + '</div>' +
+      '<div class="trendlb"><span>' + fmtDate(show14[0].k) + '</span><span>▒ = forecast</span><span>' + fmtDate(show14[show14.length - 1].k) + '</span></div>' +
+      '<div class="empty" style="padding:8px 0 0;text-align:left">Based on a 14-day linear trend of daily sales. Treat it as an estimate — sales usually spike close to the release date.</div></div>';
+
+    // goal tracking
+    const tgt = parseInt($('fcTarget').value, 10), td = $('fcDate').value;
+    if(tgt > 0){
+      const rem = Math.max(0, tgt - tixAll);
+      let g = '<div class="card"><h2><span class="dot"></span>Goal tracker</h2><div class="dstats">' +
+        '<div class="dstat"><small>Sold / target</small><b>' + tixAll + ' / ' + tgt + '</b></div>' +
+        '<div class="dstat"><small>Remaining</small><b>' + rem + '</b></div></div>';
+      if(rem === 0) g += '<div class="insight">🎉 Target reached!</div>';
+      else{
+        if(a7 > 0){ const eta = new Date(today); eta.setDate(eta.getDate() + Math.ceil(rem / a7)); g += '<div class="insight">At the current pace (' + a7.toFixed(1) + '/day) you will reach the target in about <b>' + Math.ceil(rem / a7) + ' days</b> (' + fmtDate(isoOf(eta)) + ').</div>'; }
+        else g += '<div class="insight">No sales in the last 7 days, so no ETA can be estimated.</div>';
+        if(td){
+          const left = Math.round((new Date(td + 'T00:00:00') - today) / 86400000);
+          if(left > 0){
+            const need = rem / left, projEnd = tixAll + Math.round(a7 * left), ok = a7 >= need;
+            g += '<div class="insight">' + left + ' days to ' + fmtDate(td) + ': you need <b>' + need.toFixed(1) + ' tickets/day</b>. Projected finish: <b>' + projEnd + '</b> tickets (' + Math.round(projEnd / tgt * 100) + '% of target) — ' + (ok ? '✅ on track' : '⚠ behind by ' + (need - a7).toFixed(1) + '/day') + '.</div>';
+          }else g += '<div class="insight">The target date has passed or is today.</div>';
+        }
+      }
+      h += g + '</div>';
+    }
+
+    // collection forecast
+    const pendAll = showRows.reduce((t, r) => t + pendOf(r), 0), totAll = showRows.reduce((t, r) => t + r.count * r.price, 0);
+    if(pendAll > 0) h += '<div class="card"><h2><span class="dot"></span>Cash forecast</h2><div class="insight">Collected so far: <b>' + rupee(totAll - pendAll) + '</b>. If all pending dues come in, total revenue = <b>' + rupee(totAll) + '</b>; adding the 7-day forecast gives about <b>' + rupee(Math.round(totAll + p7sum * price)) + '</b>.</div></div>';
+  }
+  $('anaBody').innerHTML = h;
+  const dcb = $('dailyCsv'); if(dcb) dcb.addEventListener('click', exportDaily);
+}
+function exportDaily(){
+  if(!anaDaily.length){ toast('Nothing to export', 'err'); return; }
+  const lines = ['Date,Receipts,Tickets,Value,Collected,Pending,Cumulative Tickets'].concat(anaDaily.map(o => [fmtDate(o.d), o.n, o.t, o.val, o.paid, o.pend, o.cum].join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = 'datewise-tickets-' + todayISO() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+try{ const fg = JSON.parse(localStorage.getItem('cbesfc_fc') || '{}'); if(fg.t) $('fcTarget').value = fg.t; else $('fcTarget').value = 504; $('fcDate').value = '2026-11-05'; }catch(e){}
+function saveFc(){ try{ localStorage.setItem('cbesfc_fc', JSON.stringify({ t:$('fcTarget').value, d:$('fcDate').value })); }catch(e){} renderAna(); }
+$('fcTarget').addEventListener('input', saveFc);
+$('fcDate').addEventListener('change', saveFc);
+$('anaShow').addEventListener('change', renderAna);
+$('anaRange').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  anaDays = +b.dataset.d;
+  $('anaRange').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b));
+  renderAna();
+});
+$('tabAna').addEventListener('click', () => { show('anaView'); loadAna(); });
 </script>
 </body>
 </html>
